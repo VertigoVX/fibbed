@@ -16,6 +16,9 @@
   --color-accent-ink: oklch(95% 0.012 90);
   --color-focus: oklch(48% 0.17 32);
   --color-clear: transparent;
+  /* Chart: the crowd in a warm neutral, you in brick (validated: CVD dE 14, contrast >= 3:1) */
+  --color-chart-crowd: #857f73;
+  --color-chart-you: var(--color-accent);
 
   --font-display: 'Zilla Slab', ui-serif, Georgia, serif;
   --font-body: 'Spectral', ui-serif, Georgia, serif;

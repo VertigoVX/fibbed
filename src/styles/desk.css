@@ -4,23 +4,6 @@
   padding-bottom: var(--space-2xl);
 }
 
-.btn--quiet {
-  min-height: 44px;
-  padding-inline: var(--space-xs);
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: var(--text-sm);
-  color: var(--color-ink-2);
-  text-decoration: underline;
-  text-decoration-color: var(--color-rule);
-  text-underline-offset: 0.2em;
-}
-
-.btn--quiet:hover {
-  color: var(--color-ink);
-  text-decoration-color: var(--color-ink);
-}
-
 .desk__bar {
   display: flex;
   flex-wrap: wrap;

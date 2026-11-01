@@ -1,10 +1,17 @@
 # Fibbed
 
+- **Play it:** https://vertigovx.github.io/fibbed/
+- **Editor’s desk:** https://vertigovx.github.io/fibbed/moderate.html
+
 A daily game in the style of Wordle. Each day’s paper has three rounds, easy, medium and hard, each with its own theme and four statements: three true and one fib. Tap a statement you trust and mark it as true. Clear all three truths and you catch that round’s fib; mark the fib and the round is over.
 
 At the end you see how many of the three fibs you caught, a correction for each, and a spoiler-free share grid. Then you can write a fib for tomorrow’s round 3. The editor picks one to run, credited to its writer.
 
-Scoring: fibs caught out of 3 is the headline, truths cleared out of 9 is the detail. Your streak counts days with at least one fib caught; a 3 of 3 day is a perfect paper.
+Scoring: fibs caught out of 3 is the headline. Your score is a point for every truth cleared and every fib caught, 12 at most, and the final paper charts it against everyone who played that day (“Better than 64% of today’s 120 players”). Your streak counts days with at least one fib caught; a 3 of 3 day is a perfect paper.
+
+Sharing: the final paper has Share result (the phone’s share sheet, or copy on desktop), Invite a friend, and one-tap links to X, WhatsApp, Bluesky and Facebook.
+
+Accounts are optional. Players sign in with an emailed link (no password) to keep their streak and past papers on every device; results already played on that device come with them.
 
 The game is built mobile first and styled as a newspaper front page (the Newsprint theme from [Hallmark](https://github.com/Nutlope/hallmark)). When the game ends, the fib is struck through and printed as a correction.
 
@@ -37,7 +44,7 @@ Without Supabase the game runs fully offline. Fibs stay on the device and there 
 
 1. Create a project at [supabase.com](https://supabase.com).
 2. Run `supabase/migrations/20261101000000_init.sql` in the SQL editor, or use `supabase db push`.
-3. Run the other migrations in `supabase/migrations` in date order: `..._editors.sql`, then `..._three_rounds.sql`.
+3. Run the other migrations in `supabase/migrations` in date order: `..._editors.sql`, `..._three_rounds.sql`, then `..._accounts.sql`.
 4. Copy `.env.example` to `.env.local` and add your project URL and anon key. Add the same two variables to your host (Vercel, Netlify or Cloudflare Pages).
 
 What the schema enforces:
@@ -46,6 +53,16 @@ What the schema enforces:
 - Players can record one result per day per device. Only totals are readable, through `puzzle_stats(n)`.
 - Results store every pick of the day, fibs caught and whether the round-3 fib was caught. `puzzle_stats(n)` returns players, perfect papers and how many round 3 fooled.
 - `featured_fib(n)` returns a day’s featured fib (it replaces the house fib in round 3) only once that day has started somewhere on Earth, so tomorrow’s fib can’t be read early.
+
+## Player accounts
+
+Sign-in uses Supabase’s emailed magic links. One-time setup in Supabase:
+
+1. Authentication > URL Configuration: set **Site URL** to `https://vertigovx.github.io/fibbed/` and add it under **Redirect URLs**, with `http://localhost:5173/` for local development.
+2. Authentication > Sign In / Providers: make sure **Email** is enabled.
+3. Before launch, set up custom SMTP (Authentication > Emails > SMTP settings; Resend, Postmark or similar). Supabase’s built-in email only sends a handful of sign-in emails an hour, which is fine for testing but not for players.
+
+What the database does (`..._accounts.sql`): a result is tied to the signed-in account automatically, one per account per day across devices; players can read only their own history; `claim_device_results` brings a device’s anonymous results into the account on sign-in; `score_counts(n)` feeds the comparison chart.
 
 ## Moderating fibs
 

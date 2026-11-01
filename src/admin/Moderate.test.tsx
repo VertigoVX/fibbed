@@ -109,7 +109,7 @@ describe('the desk', () => {
     setup(memoryApi({ fibs: [fib({})] }))
     expect(await screen.findByRole('heading', { level: 1, name: /No\. 2.*Honey bees/ })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Running on this day' })).toHaveTextContent(getPuzzle(2).rounds[2].fib.text)
-    const list = screen.getByRole('list', { name: 'Submitted fibs' })
+    const list = await screen.findByRole('list', { name: 'Submitted fibs' })
     expect(within(list).getByText(/rub pollen/)).toBeInTheDocument()
     expect(within(list).getByText('Tristan')).toBeInTheDocument()
     expect(within(list).getByText('Pending')).toBeInTheDocument()

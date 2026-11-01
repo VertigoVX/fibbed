@@ -123,3 +123,70 @@ describe('clientId', () => {
     expect(clientId()).toMatch(/^[0-9a-f-]{36}$/)
   })
 })
+
+describe('accounts (supabase)', () => {
+  function authClient(over: Record<string, unknown> = {}) {
+    const s = fakeSupabase(over as never)
+    const auth = {
+      getSession: vi.fn().mockResolvedValue({ data: { session: { user: { id: 'u1', email: 'sam@example.com' } } } }),
+      signInWithOtp: vi.fn().mockResolvedValue({ error: null }),
+      signOut: vi.fn().mockResolvedValue({ error: null }),
+      onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+    }
+    const order = vi.fn().mockResolvedValue({ data: [{ puzzle_number: 2, fibs_caught: 2, cleared: 7 }], error: null })
+    const select = vi.fn(() => ({ not: vi.fn(() => ({ order })) }))
+    const from = vi.fn((t: string) => (t === 'results' ? { insert: s.insert, select } : { insert: s.insert }))
+    return { client: { ...(s.client as object), auth, from } as never, auth, rpc: s.rpc, insert: s.insert }
+  }
+
+  it('reports the signed-in player', async () => {
+    const c = authClient()
+    expect(await supabaseBackend(c.client).account.current()).toEqual({ id: 'u1', email: 'sam@example.com' })
+  })
+
+  it('emails a sign-in link that comes back to the game', async () => {
+    const c = authClient()
+    expect(await supabaseBackend(c.client).account.sendLink('sam@example.com', 'https://x.test/fibbed/')).toEqual({ ok: true })
+    expect(c.auth.signInWithOtp).toHaveBeenCalledWith({ email: 'sam@example.com', options: { emailRedirectTo: 'https://x.test/fibbed/' } })
+  })
+
+  it('explains when too many links were asked for', async () => {
+    const c = authClient()
+    c.auth.signInWithOtp.mockResolvedValue({ error: { status: 429, message: 'email rate limit exceeded' } })
+    expect(await supabaseBackend(c.client).account.sendLink('sam@example.com', 'u')).toEqual({
+      ok: false,
+      error: 'Too many sign-in emails just now. Wait a few minutes and try again.',
+    })
+  })
+
+  it('loads the player’s history', async () => {
+    const c = authClient()
+    expect(await supabaseBackend(c.client).account.history()).toEqual([{ puzzleNumber: 2, fibsCaught: 2, cleared: 7 }])
+  })
+
+  it('claims this device’s anonymous results', async () => {
+    const c = authClient()
+    await supabaseBackend(c.client).account.claimDevice('c1')
+    expect(c.rpc).toHaveBeenCalledWith('claim_device_results', { device: 'c1' })
+  })
+
+  it('records truths cleared with each result', async () => {
+    const c = authClient()
+    await supabaseBackend(c.client).recordResult({ puzzleNumber: 2, clientId: 'c1', picks: [['a'], ['b'], ['c']], fibsCaught: 1, readerCaught: false, cleared: 2 })
+    expect(c.insert).toHaveBeenCalledWith(expect.objectContaining({ cleared: 2 }))
+  })
+
+  it('reads today’s score spread', async () => {
+    const s = fakeSupabase({ rpc: { score_counts: { data: [{ score: 6, players: 2 }, { score: 12, players: 1 }], error: null } } })
+    expect(await supabaseBackend(s.client).getScoreCounts(4)).toEqual({ 6: 2, 12: 1 })
+  })
+})
+
+describe('accounts (offline)', () => {
+  it('cannot sign in without the server', async () => {
+    const b = localBackend()
+    expect(b.account.available).toBe(false)
+    expect(await b.account.current()).toBeNull()
+    expect(await b.getScoreCounts(1)).toBeNull()
+  })
+})

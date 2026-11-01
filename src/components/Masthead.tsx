@@ -3,7 +3,14 @@ const dateFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'num
 const iso = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
-export function Masthead({ number, date }: { number: number; date: Date }) {
+type Props = {
+  number: number
+  date: Date
+  /** Shown only when accounts are available. */
+  account?: { signedIn: boolean; onOpen: () => void }
+}
+
+export function Masthead({ number, date, account }: Props) {
   return (
     <header className="masthead">
       <div className="masthead__bar">
@@ -14,6 +21,11 @@ export function Masthead({ number, date }: { number: number; date: Date }) {
           <span>No. {number}</span>
           <time dateTime={iso(date)}>{dateFormat.format(date)}</time>
         </p>
+        {account && (
+          <button type="button" className="btn btn--quiet masthead__account" onClick={account.onOpen}>
+            {account.signedIn ? 'Your papers' : 'Sign in'}
+          </button>
+        )}
       </div>
       <hr className="rule--double" />
       <details className="howto">

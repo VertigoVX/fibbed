@@ -148,7 +148,7 @@ describe('the final paper', () => {
     const backend = { ...localBackend(), getStats: vi.fn().mockResolvedValue({ players: 120, perfect: 18, readerFooled: 64 }) }
     const { user } = setup(backend)
     await playDay(user, ['catch', 'catch', 'fooled'])
-    expect(await screen.findByText('120 players today, 18 with a perfect paper. Round 3 fooled 64 of them.')).toBeInTheDocument()
+    expect(await screen.findByText('18 with a perfect paper. Round 3 fooled 64 of 120.')).toBeInTheDocument()
   })
 
   it('copies a spoiler-free result', async () => {

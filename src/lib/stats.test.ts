@@ -1,4 +1,4 @@
-import { loadStats, recordResult, loadProgress, saveProgress } from './stats'
+import { loadStats, recordResult, loadProgress, saveProgress, statsFromResults, mergeResults } from './stats'
 
 const result = (fibsCaught: number) => ({ fibsCaught, cleared: fibsCaught * 3 })
 
@@ -64,5 +64,43 @@ describe('progress', () => {
   it('ignores progress saved by the old one-round game', () => {
     localStorage.setItem('fibbed:progress', JSON.stringify({ number: 5, picks: ['a'] }))
     expect(loadProgress(5)).toEqual([[], [], []])
+  })
+})
+
+describe('statsFromResults (history from an account, merged with this device)', () => {
+  const r = (fibsCaught: number) => ({ fibsCaught, cleared: fibsCaught * 3 })
+
+  it('counts played and perfect days', () => {
+    expect(statsFromResults({ 1: r(3), 2: r(1), 4: r(3) }, 4)).toMatchObject({ played: 3, perfect: 2 })
+  })
+
+  it('finds the current streak ending on the latest day', () => {
+    expect(statsFromResults({ 1: r(1), 2: r(0), 3: r(2), 4: r(1) }, 4)).toMatchObject({ streak: 2, best: 2 })
+  })
+
+  it('keeps the streak alive until today’s paper is missed', () => {
+    expect(statsFromResults({ 2: r(1), 3: r(1) }, 4).streak).toBe(2)
+    expect(statsFromResults({ 2: r(1), 3: r(1) }, 5).streak).toBe(0)
+  })
+
+  it('remembers the best run', () => {
+    expect(statsFromResults({ 1: r(1), 2: r(1), 3: r(1), 5: r(1) }, 5)).toMatchObject({ streak: 1, best: 3 })
+  })
+
+  it('is empty with no results', () => {
+    expect(statsFromResults({}, 3)).toEqual({ played: 0, perfect: 0, streak: 0, best: 0, last: null, results: {} })
+  })
+})
+
+describe('mergeResults', () => {
+  it('takes the union, preferring the account’s result for a day', () => {
+    expect(mergeResults({ 1: { fibsCaught: 1, cleared: 4 }, 2: { fibsCaught: 0, cleared: 0 } }, [
+      { puzzleNumber: 2, fibsCaught: 3, cleared: 9 },
+      { puzzleNumber: 3, fibsCaught: 1, cleared: 5 },
+    ])).toEqual({
+      1: { fibsCaught: 1, cleared: 4 },
+      2: { fibsCaught: 3, cleared: 9 },
+      3: { fibsCaught: 1, cleared: 5 },
+    })
   })
 })

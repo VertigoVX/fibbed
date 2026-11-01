@@ -401,6 +401,23 @@ a:hover {
   cursor: progress;
 }
 
+.btn--quiet {
+  min-height: 44px;
+  padding-inline: var(--space-xs);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--text-sm);
+  color: var(--color-ink-2);
+  text-decoration: underline;
+  text-decoration-color: var(--color-rule);
+  text-underline-offset: 0.2em;
+}
+
+.btn--quiet:hover {
+  color: var(--color-ink);
+  text-decoration-color: var(--color-ink);
+}
+
 /* Result */
 
 .result,
@@ -675,6 +692,192 @@ a:hover {
   padding-block: var(--space-2xs);
 }
 
+/* Masthead account link */
+
+.masthead__account {
+  margin-left: auto;
+}
+
+.masthead__bar .dateline {
+  order: 3;
+  flex-basis: 100%;
+}
+
+/* How you compare */
+
+.compare {
+  display: grid;
+  gap: var(--space-xs);
+  padding-bottom: var(--space-md);
+}
+
+.compare__score {
+  font-size: var(--text-title);
+  padding-top: var(--space-md);
+}
+
+.compare__how,
+.crowd {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.compare__rank {
+  font-size: var(--text-lead);
+  color: var(--color-ink);
+}
+
+.chart {
+  margin: var(--space-xs) 0 0;
+}
+
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 34rem;
+  overflow: visible;
+}
+
+.chart__axis {
+  stroke: var(--color-rule);
+  stroke-width: 1;
+}
+
+.chart__col path {
+  fill: var(--color-chart-crowd);
+}
+
+.chart__col--you path {
+  fill: var(--color-chart-you);
+}
+
+.chart__hit {
+  fill: var(--color-clear);
+}
+
+.chart__col:hover path {
+  opacity: 0.8;
+}
+
+.chart__tick {
+  font: 500 11px var(--font-outlier);
+  fill: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart__you {
+  font: 500 12px var(--font-body);
+  fill: var(--color-ink);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Share and invite */
+
+.share__actions {
+  display: grid;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.share__actions .btn {
+  width: 100%;
+}
+
+.share__to {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs) var(--space-md);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.share__to a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 500;
+}
+
+.nudge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-xs);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.nudge .btn--quiet {
+  padding-inline: 0;
+}
+
+/* Account */
+
+.account {
+  display: grid;
+  gap: var(--space-lg);
+  justify-items: start;
+  max-width: 40rem;
+}
+
+.account .boxscore {
+  width: 100%;
+}
+
+.account__sent {
+  padding: var(--space-md) 0;
+  border-block: var(--rule-hair) solid var(--color-rule);
+  font-size: var(--text-lead);
+}
+
+.papers {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-md);
+}
+
+.papers th,
+.papers td {
+  padding: var(--space-sm) var(--space-xs) var(--space-sm) 0;
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.papers thead th {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-muted);
+  border-bottom-color: var(--color-rule-2);
+}
+
+.papers tbody th {
+  font: var(--display-weight) var(--text-md) / 1.2 var(--font-display);
+}
+
+.papers .num {
+  text-align: right;
+  padding-right: 0;
+}
+
+.papers tr[data-perfect] td:nth-child(3) {
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
 /* Desktop: the lede holds the left column while the paper runs on the right */
 
 @media (min-width: 60rem) {
@@ -736,8 +939,27 @@ a:hover {
     justify-self: end;
   }
 
-  .share .btn {
+  .share__actions {
+    grid-auto-flow: column;
+    justify-content: start;
+  }
+
+  .share__actions .btn {
     width: auto;
+  }
+
+  .masthead__bar .dateline {
+    order: 0;
+    flex-basis: auto;
+    margin-left: auto;
+  }
+
+  .masthead__account {
+    margin-left: 0;
+  }
+
+  .paper.desk > .lede {
+    position: static;
   }
 
   .page[data-playing] .colophon {
@@ -751,4 +973,19 @@ a:hover {
   *::after {
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Shared with the editor's desk: a quiet top bar and empty states */
+
+.desk__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  padding-block: var(--space-xs);
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+}
+
+.desk__empty {
+  color: var(--color-muted);
 }

@@ -68,3 +68,41 @@ export function loadProgress(number: number): string[][] {
   if (!p || p.number !== number || !Array.isArray(p.picks)) return emptyPicks()
   return emptyPicks().map((_, i) => (Array.isArray(p.picks[i]) ? p.picks[i].filter((x) => typeof x === 'string') : []))
 }
+
+export type HistoryEntry = { puzzleNumber: number; fibsCaught: number; cleared: number }
+
+/** This device's results plus an account's history; the account wins for a day both have. */
+export function mergeResults(local: Record<number, DayResult>, history: HistoryEntry[]): Record<number, DayResult> {
+  const out: Record<number, DayResult> = { ...local }
+  for (const h of history) out[h.puzzleNumber] = { fibsCaught: h.fibsCaught, cleared: h.cleared }
+  return out
+}
+
+/** Played, perfect and streaks worked out from a set of results, as of today’s paper. */
+export function statsFromResults(results: Record<number, DayResult>, today: number): Stats {
+  const days = Object.keys(results)
+    .map(Number)
+    .sort((a, b) => a - b)
+  if (days.length === 0) return empty()
+  let best = 0
+  let run = 0
+  let prev: number | null = null
+  for (const d of days) {
+    const scored = results[d].fibsCaught > 0
+    run = scored ? (prev === d - 1 ? run + 1 : 1) : 0
+    if (!scored) prev = null
+    else prev = d
+    best = Math.max(best, run)
+  }
+  const last = days[days.length - 1]
+  // The streak survives until a day is missed: yesterday's paper counts until today's is played.
+  const streak = last >= today - 1 ? run : 0
+  return {
+    played: days.length,
+    perfect: days.filter((d) => results[d].fibsCaught === ROUNDS).length,
+    streak,
+    best,
+    last,
+    results,
+  }
+}
