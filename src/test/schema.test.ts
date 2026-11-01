@@ -95,18 +95,33 @@ describe('featured_fib', () => {
 })
 
 describe('results and stats', () => {
-  it('records one result per device and reports totals', async () => {
-    await asAnon(`insert into results (puzzle_number, client_id, picks, caught) values (2, $1, '{a,b,c,d}', true)`, [A])
-    await asAnon(`insert into results (puzzle_number, client_id, picks, caught) values (2, $1, '{fib}', false)`, [B])
-    await expect(
-      asAnon(`insert into results (puzzle_number, client_id, picks, caught) values (2, $1, '{a}', false)`, [A]),
-    ).rejects.toMatchObject({ code: '23505' })
-    const { rows } = await asAnon<{ players: number; caught: number }>('select * from puzzle_stats(2)')
-    expect(rows.map((r) => ({ players: Number(r.players), caught: Number(r.caught) }))).toEqual([{ players: 2, caught: 1 }])
+  const insert = (device: string, picks: string, caught: boolean, fibsCaught: number, readerCaught: boolean) =>
+    asAnon(
+      `insert into results (puzzle_number, client_id, picks, caught, fibs_caught, reader_caught) values (2, $1, $2, $3, $4, $5)`,
+      [device, picks, caught, fibsCaught, readerCaught],
+    )
+
+  it('records a three-round day, one per device, and reports totals', async () => {
+    await insert(A, '{a,b,c,d,e,f,g,h,i}', true, 3, true)
+    await insert(B, '{a,fib,b,c,d,fib}', false, 1, false)
+    await expect(insert(A, '{a}', false, 0, false)).rejects.toMatchObject({ code: '23505' })
+    const { rows } = await asAnon<{ players: number; perfect: number; reader_fooled: number }>('select * from puzzle_stats(2)')
+    expect(rows.map((r) => ({ players: Number(r.players), perfect: Number(r.perfect), reader_fooled: Number(r.reader_fooled) }))).toEqual([
+      { players: 2, perfect: 1, reader_fooled: 1 },
+    ])
+  })
+
+  it('accepts up to twelve picks and refuses more', async () => {
+    await insert(A, `{${'x,'.repeat(11)}x}`, false, 0, false)
+    await expect(insert(B, `{${'x,'.repeat(12)}x}`, false, 0, false)).rejects.toThrow()
+  })
+
+  it('refuses an impossible number of fibs caught', async () => {
+    await expect(insert(A, '{a}', false, 4, false)).rejects.toThrow()
   })
 
   it('hides individual results', async () => {
-    await asAnon(`insert into results (puzzle_number, client_id, picks, caught) values (2, $1, '{fib}', false)`, [A])
+    await insert(A, '{fib}', false, 0, false)
     const { rows } = await asAnon('select * from results')
     expect(rows).toEqual([])
   })

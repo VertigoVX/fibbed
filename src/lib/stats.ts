@@ -1,18 +1,23 @@
-import type { Outcome } from './types'
+import { ROUNDS } from './game'
+
+export type DayResult = { fibsCaught: number; cleared: number }
 
 export type Stats = {
   played: number
-  caught: number
+  perfect: number
+  /** Consecutive days with at least one fib caught. */
   streak: number
   best: number
   last: number | null
-  results: Record<number, Outcome>
+  results: Record<number, DayResult>
 }
 
-const STATS_KEY = 'fibbed:stats'
-const PROGRESS_KEY = 'fibbed:progress'
+// v2: three rounds a day. Data from the one-round game is left alone and ignored.
+const STATS_KEY = 'fibbed:stats:v2'
+const PROGRESS_KEY = 'fibbed:progress:v2'
 
-const empty = (): Stats => ({ played: 0, caught: 0, streak: 0, best: 0, last: null, results: {} })
+const empty = (): Stats => ({ played: 0, perfect: 0, streak: 0, best: 0, last: null, results: {} })
+const emptyPicks = () => Array.from({ length: ROUNDS }, () => [] as string[])
 
 function read<T>(key: string): T | null {
   try {
@@ -33,31 +38,33 @@ function write(key: string, value: unknown) {
 
 export function loadStats(): Stats {
   const s = read<Stats>(STATS_KEY)
-  return s && typeof s.played === 'number' ? { ...empty(), ...s } : empty()
+  return s && typeof s.played === 'number' && typeof s.perfect === 'number' ? { ...empty(), ...s } : empty()
 }
 
-export function recordResult(number: number, outcome: Outcome): Stats {
+export function recordResult(number: number, result: DayResult): Stats {
   const s = loadStats()
   if (s.results[number]) return s
-  const continues = s.last === number - 1 && s.results[number - 1]?.caught
-  const streak = outcome.caught ? (continues ? s.streak + 1 : 1) : 0
+  const scored = result.fibsCaught > 0
+  const continues = s.last === number - 1 && (s.results[number - 1]?.fibsCaught ?? 0) > 0
+  const streak = scored ? (continues ? s.streak + 1 : 1) : 0
   const next: Stats = {
     played: s.played + 1,
-    caught: s.caught + (outcome.caught ? 1 : 0),
+    perfect: s.perfect + (result.fibsCaught === ROUNDS ? 1 : 0),
     streak,
     best: Math.max(s.best, streak),
     last: number,
-    results: { ...s.results, [number]: outcome },
+    results: { ...s.results, [number]: result },
   }
   write(STATS_KEY, next)
   return next
 }
 
-export function saveProgress(number: number, picks: string[]) {
+export function saveProgress(number: number, picks: string[][]) {
   write(PROGRESS_KEY, { number, picks })
 }
 
-export function loadProgress(number: number): string[] {
-  const p = read<{ number: number; picks: string[] }>(PROGRESS_KEY)
-  return p && p.number === number && Array.isArray(p.picks) ? p.picks : []
+export function loadProgress(number: number): string[][] {
+  const p = read<{ number: number; picks: string[][] }>(PROGRESS_KEY)
+  if (!p || p.number !== number || !Array.isArray(p.picks)) return emptyPicks()
+  return emptyPicks().map((_, i) => (Array.isArray(p.picks[i]) ? p.picks[i].filter((x) => typeof x === 'string') : []))
 }

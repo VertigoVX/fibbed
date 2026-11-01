@@ -125,7 +125,8 @@ function Desk({ api, now, onSignOut }: { api: EditorApi; now: Date; onSignOut: (
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const puzzle = getPuzzle(day)
+  // Player fibs run in round 3, the reader round.
+  const reader = getPuzzle(day).rounds[2]
 
   const load = useCallback(async () => {
     try {
@@ -194,9 +195,9 @@ function Desk({ api, now, onSignOut }: { api: EditorApi; now: Date; onSignOut: (
         <h1>
           <span className="desk__dayline">
             No. {day}, {dayFormat.format(dateForPuzzle(day))}
-            {day === tomorrow ? ' (tomorrow)' : ''}
+            {day === tomorrow ? ' (tomorrow)' : ''}, round 3
           </span>{' '}
-          {puzzle.theme}
+          {reader.theme}
         </h1>
       </header>
 
@@ -219,7 +220,7 @@ function Desk({ api, now, onSignOut }: { api: EditorApi; now: Date; onSignOut: (
               </>
             ) : (
               <>
-                <p className="desk__quote">{puzzle.fib.text}</p>
+                <p className="desk__quote">{reader.fib.text}</p>
                 <p className="desk__meta">House fib. It runs unless you pick a player’s fib below.</p>
               </>
             )}
@@ -291,7 +292,7 @@ function Desk({ api, now, onSignOut }: { api: EditorApi; now: Date; onSignOut: (
                       setDay(d.n)
                     }}
                   >
-                    No. {d.n}, {getPuzzle(d.n).theme}
+                    No. {d.n}, {getPuzzle(d.n).rounds[2].theme}
                     <span className="agate">{d.pending} waiting</span>
                   </a>
                 </li>

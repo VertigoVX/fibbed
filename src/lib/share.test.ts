@@ -1,23 +1,33 @@
 import { shareText } from './share'
+import type { DayOutcome } from './types'
+
+const day = (rounds: [number, boolean][]): DayOutcome => {
+  const fibsCaught = rounds.filter(([, c]) => c).length
+  return {
+    rounds: rounds.map(([cleared, caught]) => ({ cleared, caught })),
+    fibsCaught,
+    cleared: rounds.reduce((s, [c]) => s + c, 0),
+    perfect: fibsCaught === 3,
+    done: true,
+  }
+}
 
 describe('shareText', () => {
-  it('shows a caught game as four cleared truths and a caught fib', () => {
-    expect(shareText(12, { cleared: 4, caught: true }, 'https://fibbed.game')).toBe(
-      'Fibbed #12\n🟩🟩🟩🟩🕵️ Caught the fib\nhttps://fibbed.game',
+  it('shows one line per round and the total', () => {
+    expect(shareText(12, day([[3, true], [1, false], [3, true]]), 'https://x.test/fibbed/')).toBe(
+      'Fibbed #12\n🟩🟩🟩🕵️\n🟩🟥\n🟩🟩🟩🕵️\n2 of 3 fibs caught\nhttps://x.test/fibbed/',
     )
   })
 
-  it('shows where a fooled game went wrong', () => {
-    expect(shareText(3, { cleared: 1, caught: false }, 'https://fibbed.game')).toBe(
-      'Fibbed #3\n🟩🟥 Fibbed after 1 of 4\nhttps://fibbed.game',
-    )
+  it('calls out a perfect paper', () => {
+    expect(shareText(4, day([[3, true], [3, true], [3, true]]), 'u')).toContain('Perfect paper: 3 of 3 fibs caught')
   })
 
-  it('handles being fooled on the first pick', () => {
-    expect(shareText(3, { cleared: 0, caught: false }, 'x')).toBe('Fibbed #3\n🟥 Fibbed on the first pick\nx')
+  it('shows a fib caught on the first pick of a round as a single red square', () => {
+    expect(shareText(4, day([[0, false], [3, true], [2, false]]), 'u').split('\n').slice(1, 4)).toEqual(['🟥', '🟩🟩🟩🕵️', '🟩🟩🟥'])
   })
 
-  it('never contains the statements themselves', () => {
-    expect(shareText(1, { cleared: 2, caught: false }, 'x')).not.toMatch(/truth|fib:/i)
+  it('handles a day with no fibs caught', () => {
+    expect(shareText(4, day([[0, false], [1, false], [2, false]]), 'u')).toContain('0 of 3 fibs caught')
   })
 })

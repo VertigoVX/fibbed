@@ -108,7 +108,7 @@ describe('the desk', () => {
   it('opens on tomorrow with the house fib and the day’s submissions', async () => {
     setup(memoryApi({ fibs: [fib({})] }))
     expect(await screen.findByRole('heading', { level: 1, name: /No\. 2.*Honey bees/ })).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Running on this day' })).toHaveTextContent(getPuzzle(2).fib.text)
+    expect(screen.getByRole('region', { name: 'Running on this day' })).toHaveTextContent(getPuzzle(2).rounds[2].fib.text)
     const list = screen.getByRole('list', { name: 'Submitted fibs' })
     expect(within(list).getByText(/rub pollen/)).toBeInTheDocument()
     expect(within(list).getByText('Tristan')).toBeInTheDocument()
@@ -119,7 +119,7 @@ describe('the desk', () => {
     const { user } = setup(memoryApi())
     await screen.findByRole('heading', { level: 1, name: /No\. 2/ })
     await user.click(screen.getByRole('button', { name: 'Next day' }))
-    expect(await screen.findByRole('heading', { level: 1, name: new RegExp(`No\\. 3.*${getPuzzle(3).theme}`) })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: new RegExp(`No\\. 3.*${getPuzzle(3).rounds[2].theme}`) })).toBeInTheDocument()
     expect(window.location.search).toBe('?day=3')
     await user.click(screen.getByRole('button', { name: 'Previous day' }))
     await user.click(screen.getByRole('button', { name: 'Previous day' }))
@@ -157,7 +157,7 @@ describe('moderating', () => {
   it('goes back to the house fib', async () => {
     const { user } = setup(memoryApi({ fibs: [fib({ status: 'approved', featured: true })] }))
     await user.click(await screen.findByRole('button', { name: 'Use the house fib' }))
-    expect(await within(screen.getByRole('region', { name: 'Running on this day' })).findByText(getPuzzle(2).fib.text)).toBeInTheDocument()
+    expect(await within(screen.getByRole('region', { name: 'Running on this day' })).findByText(getPuzzle(2).rounds[2].fib.text)).toBeInTheDocument()
   })
 
   it('rejects and restores a fib', async () => {

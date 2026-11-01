@@ -589,6 +589,92 @@ a:hover {
   display: none;
 }
 
+/* Rounds */
+
+.lede__round {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font: 500 var(--text-sm) / 1.4 var(--font-body);
+  letter-spacing: 0;
+  color: var(--color-muted);
+}
+
+.lede h1:focus,
+.summary h1:focus {
+  outline: none;
+}
+
+.lede h1:focus-visible {
+  outline: 2px solid var(--color-focus);
+}
+
+.verdict {
+  display: grid;
+  gap: var(--space-sm);
+  padding-top: var(--space-lg);
+}
+
+.verdict h2 {
+  font-size: var(--text-section);
+}
+
+.verdict h2:focus {
+  outline: none;
+}
+
+/* The final paper */
+
+.summary h1 {
+  max-width: 16ch;
+}
+
+.rounds {
+  display: grid;
+  gap: var(--space-xl);
+  padding-block: var(--space-xl);
+}
+
+.round-recap {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.round-recap h2 {
+  font-size: var(--text-title);
+  padding-top: var(--space-xs);
+}
+
+.round-recap__meta {
+  display: block;
+  margin-bottom: var(--space-2xs);
+  font: 500 var(--text-sm) / 1.4 var(--font-body);
+  letter-spacing: 0;
+  color: var(--color-muted);
+}
+
+.truths {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.truths li {
+  display: grid;
+  gap: var(--space-2xs);
+  padding-block: var(--space-sm);
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+}
+
+.truths li:first-child {
+  border-top: var(--rule-hair) solid var(--color-rule);
+}
+
+.truths a {
+  justify-self: start;
+  font-size: var(--text-sm);
+  padding-block: var(--space-2xs);
+}
+
 /* Desktop: the lede holds the left column while the paper runs on the right */
 
 @media (min-width: 60rem) {
@@ -609,7 +695,7 @@ a:hover {
 
   .paper > .lede {
     grid-column: 1;
-    grid-row: 1 / span 4;
+    grid-row: 1 / span 8;
     position: sticky;
     top: var(--space-xl);
     padding-top: var(--space-xl);

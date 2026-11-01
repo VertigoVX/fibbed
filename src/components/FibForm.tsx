@@ -9,7 +9,7 @@ type Props = { number: number; backend: Backend; clientId: string }
 const dayFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
 
 export function FibForm({ number, backend, clientId }: Props) {
-  const tomorrow = getPuzzle(number)
+  const tomorrow = getPuzzle(number).rounds[2]
   const [text, setText] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState<{ field: 'text' | 'name' | 'form'; message: string } | null>(null)
@@ -54,7 +54,7 @@ export function FibForm({ number, backend, clientId }: Props) {
   return (
     <section className="write" aria-labelledby="write-head">
       <hr className="rule--double" />
-      <h2 id="write-head">Tomorrow: {tomorrow.theme}</h2>
+      <h2 id="write-head">Tomorrow’s round 3: {tomorrow.theme}</h2>
       {sent ? (
         <div className="write__sent" role="status">
           <p className="write__quote">“{sent}”</p>
@@ -66,7 +66,7 @@ export function FibForm({ number, backend, clientId }: Props) {
         </div>
       ) : (
         <form className="write__form" onSubmit={submit} noValidate>
-          <p className="lead">Write a fib about {tomorrow.theme.toLowerCase()}. The editor picks one to run tomorrow, with its writer’s name on it.</p>
+          <p className="lead">Write a fib about {tomorrow.theme.toLowerCase()}. The editor picks one to run in round 3 tomorrow, with its writer’s name on it.</p>
           <div className="field">
             <label htmlFor={ids.text}>Your fib</label>
             <textarea

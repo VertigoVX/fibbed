@@ -1,20 +1,34 @@
-type Props = { cleared: number; canMark: boolean; onMark: () => void }
+type Props = {
+  round: number
+  cleared: number
+  total: number
+  reviewing: boolean
+  canMark: boolean
+  onMark: () => void
+  onNext: () => void
+}
 
-export function ActionBar({ cleared, canMark, onMark }: Props) {
+export function ActionBar({ round, cleared, total, reviewing, canMark, onMark, onNext }: Props) {
   return (
     <div className="actionbar">
       <div className="actionbar__inner">
         <div className="progress">
-          <p role="status">{cleared} of 4 truths cleared</p>
+          <p role="status">{reviewing ? `Round ${round} done` : `${cleared} of ${total} truths cleared`}</p>
           <div className="ticks" aria-hidden="true">
-            {[0, 1, 2, 3].map((i) => (
+            {Array.from({ length: total }, (_, i) => (
               <span key={i} className="tick" data-on={i < cleared || undefined} />
             ))}
           </div>
         </div>
-        <button type="button" className="btn btn--primary" disabled={!canMark} onClick={onMark}>
-          Mark as true
-        </button>
+        {reviewing ? (
+          <button type="button" className="btn btn--primary" onClick={onNext}>
+            Next round
+          </button>
+        ) : (
+          <button type="button" className="btn btn--primary" disabled={!canMark} onClick={onMark}>
+            Mark as true
+          </button>
+        )}
       </div>
     </div>
   )

@@ -36,16 +36,35 @@ describe('supabaseBackend', () => {
     expect(r).toEqual({ ok: false, error: 'Could not send your fib. Try again in a moment.' })
   })
 
-  it('records a result', async () => {
+  it('records a day of three rounds', async () => {
     const s = fakeSupabase()
-    await supabaseBackend(s.client).recordResult({ puzzleNumber: 2, clientId: 'c1', picks: ['a', 'b'], caught: false })
+    await supabaseBackend(s.client).recordResult({
+      puzzleNumber: 2,
+      clientId: 'c1',
+      picks: [['a', 'b', 'c'], ['fib'], ['d', 'e', 'f']],
+      fibsCaught: 2,
+      readerCaught: true,
+    })
     expect(s.from).toHaveBeenCalledWith('results')
-    expect(s.insert).toHaveBeenCalledWith({ puzzle_number: 2, client_id: 'c1', picks: ['a', 'b'], caught: false })
+    expect(s.insert).toHaveBeenCalledWith({
+      puzzle_number: 2,
+      client_id: 'c1',
+      picks: ['a', 'b', 'c', 'fib', 'd', 'e', 'f'],
+      caught: false,
+      fibs_caught: 2,
+      reader_caught: true,
+    })
+  })
+
+  it('marks a perfect day as caught', async () => {
+    const s = fakeSupabase()
+    await supabaseBackend(s.client).recordResult({ puzzleNumber: 2, clientId: 'c1', picks: [['a'], ['b'], ['c']], fibsCaught: 3, readerCaught: true })
+    expect(s.insert).toHaveBeenCalledWith(expect.objectContaining({ caught: true }))
   })
 
   it('reads stats through the puzzle_stats function', async () => {
-    const s = fakeSupabase({ rpc: { puzzle_stats: { data: [{ players: 10, caught: 4 }], error: null } } })
-    expect(await supabaseBackend(s.client).getStats(2)).toEqual({ players: 10, caught: 4 })
+    const s = fakeSupabase({ rpc: { puzzle_stats: { data: [{ players: 10, perfect: 4, reader_fooled: 6 }], error: null } } })
+    expect(await supabaseBackend(s.client).getStats(2)).toEqual({ players: 10, perfect: 4, readerFooled: 6 })
     expect(s.rpc).toHaveBeenCalledWith('puzzle_stats', { n: 2 })
   })
 
@@ -81,15 +100,16 @@ describe('localBackend', () => {
 })
 
 describe('withFeaturedFib', () => {
-  it('swaps in a community fib and credits the author, keeping the fib id', () => {
+  it('swaps a community fib into round 3 and credits the author, keeping the fib id', () => {
     const p = withFeaturedFib(PUZZLES[0], { text: 'Octopuses can count to ten.', author: 'Lee' })
-    expect(p.fib).toMatchObject({ id: PUZZLES[0].fib.id, text: 'Octopuses can count to ten.', author: 'Lee' })
-    expect(p.fib.explanation).toMatch(/Lee/)
-    expect(p.fib.source).toBeUndefined()
+    expect(p.rounds[2].fib).toMatchObject({ id: PUZZLES[0].rounds[2].fib.id, text: 'Octopuses can count to ten.', author: 'Lee' })
+    expect(p.rounds[2].fib.explanation).toMatch(/Lee/)
+    expect(p.rounds[2].fib.source).toBeUndefined()
+    expect(p.rounds[0]).toBe(PUZZLES[0].rounds[0])
   })
 
   it('credits anonymous fibs to a player', () => {
-    expect(withFeaturedFib(PUZZLES[0], { text: 'Octopuses can count to ten.', author: null }).fib.explanation).toMatch(/a player/i)
+    expect(withFeaturedFib(PUZZLES[0], { text: 'Octopuses can count to ten.', author: null }).rounds[2].fib.explanation).toMatch(/a player/i)
   })
 
   it('leaves the puzzle alone without a featured fib', () => {

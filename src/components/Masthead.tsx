@@ -19,11 +19,11 @@ export function Masthead({ number, date }: { number: number; date: Date }) {
       <details className="howto">
         <summary>How to play</summary>
         <ol>
-          <li>Five statements, one theme. Four are true; one is a fib.</li>
+          <li>Three rounds a day, easy to hard. Each has four statements: three true, one fib.</li>
           <li>Tap a statement you trust, then press Mark as true.</li>
-          <li>Clear all four truths to catch the fib. Mark the fib and you are out.</li>
-          <li>On a keyboard, press 1 to 5 to pick a statement and Enter to mark it.</li>
-          <li>Afterwards, write a fib for tomorrow. The best one runs, with your name on it.</li>
+          <li>Clear all three truths to catch the fib. Mark the fib and the round is over.</li>
+          <li>On a keyboard, press 1 to 4 to pick a statement and Enter to mark it.</li>
+          <li>Afterwards, write a fib for tomorrow’s round 3. The editor’s pick runs with your name on it.</li>
         </ol>
       </details>
     </header>

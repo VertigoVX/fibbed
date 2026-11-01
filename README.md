@@ -1,8 +1,10 @@
 # Fibbed
 
-A daily game in the style of Wordle. Each day has a theme and five statements: four are true and one is a fib. Tap a statement you trust and mark it as true. Clear all four truths and you catch the fib. Mark the fib and you are out.
+A daily game in the style of Wordle. Each day’s paper has three rounds, easy, medium and hard, each with its own theme and four statements: three true and one fib. Tap a statement you trust and mark it as true. Clear all three truths and you catch that round’s fib; mark the fib and the round is over.
 
-Afterwards you write a fib for tomorrow’s theme. The best one runs the next day, credited to you.
+At the end you see how many of the three fibs you caught, a correction for each, and a spoiler-free share grid. Then you can write a fib for tomorrow’s round 3. The editor picks one to run, credited to its writer.
+
+Scoring: fibs caught out of 3 is the headline, truths cleared out of 9 is the detail. Your streak counts days with at least one fib caught; a 3 of 3 day is a perfect paper.
 
 The game is built mobile first and styled as a newspaper front page (the Newsprint theme from [Hallmark](https://github.com/Nutlope/hallmark)). When the game ends, the fib is struck through and printed as a correction.
 
@@ -23,29 +25,31 @@ Without Supabase the game runs fully offline. Fibs stay on the device and there 
 - **Stack:** Vite, React 19 and TypeScript. Two pages: `index.html` (the game) and `moderate.html` (the editor’s desk). Tests use Vitest, Testing Library, PGlite (an in-memory Postgres for the schema) and Playwright.
 - **Developed test first.** Every module has its tests beside it:
   - `src/lib/date.ts`: the puzzle number for the player’s local day (launch day, 2 November 2026, is #1), unaffected by daylight-saving changes.
-  - `src/lib/game.ts`: a statement order that is the same for every player, the pick rules, and the outcome.
+  - `src/lib/game.ts`: the same statement order for every player, the pick rules per round, the three-round day and its outcome.
   - `src/lib/stats.ts`: streaks, a once-per-day record, and resuming a game in progress (localStorage).
-  - `src/lib/share.ts`: share text with no spoilers, like `🟩🟩🟥 Fibbed after 2 of 4`.
+  - `src/lib/share.ts`: share text with no spoilers, one line per round, like `🟩🟩🟩🕵️ / 🟥 / 🟩🟩🕵️`.
   - `src/lib/fib.ts`: validation for player fibs (length, no links, not a copy of a truth).
   - `src/lib/backend.ts`: a Supabase adapter with a local fallback, plus the swap-in for a featured community fib.
-  - `src/data/puzzles.ts`: 14 starter themes, each truth linked to a source. Tests check that the fib’s length doesn’t give it away.
+  - `src/data/puzzles.ts`: 14 days of three rounds (42 themes), each truth linked to a source. Tests check that no theme repeats and that a fib’s length doesn’t give it away.
 - **Mobile first.** The Mark as true button sits in a fixed bar within thumb reach, tap targets are at least 44px, safe-area insets are respected, and nothing scrolls sideways at 360px. From 60rem wide the headline holds the left column and the statements run on the right. On desktop the keys 1 to 5 pick a statement and Enter marks it.
 
 ## Supabase setup
 
 1. Create a project at [supabase.com](https://supabase.com).
 2. Run `supabase/migrations/20261101000000_init.sql` in the SQL editor, or use `supabase db push`.
-3. Copy `.env.example` to `.env.local` and add your project URL and anon key. Add the same two variables to your host (Vercel, Netlify or Cloudflare Pages).
+3. Run the other migrations in `supabase/migrations` in date order: `..._editors.sql`, then `..._three_rounds.sql`.
+4. Copy `.env.example` to `.env.local` and add your project URL and anon key. Add the same two variables to your host (Vercel, Netlify or Cloudflare Pages).
 
 What the schema enforces:
 
 - Players can send one fib per day per device, and only as `pending`. Nobody can read the fibs table directly.
 - Players can record one result per day per device. Only totals are readable, through `puzzle_stats(n)`.
-- `featured_fib(n)` returns a day’s featured fib only once that day has started somewhere on Earth, so tomorrow’s fib can’t be read early.
+- Results store every pick of the day, fibs caught and whether the round-3 fib was caught. `puzzle_stats(n)` returns players, perfect papers and how many round 3 fooled.
+- `featured_fib(n)` returns a day’s featured fib (it replaces the house fib in round 3) only once that day has started somewhere on Earth, so tomorrow’s fib can’t be read early.
 
 ## Moderating fibs
 
-The editor’s desk is at `/moderate.html` (on GitHub Pages: `https://vertigovx.github.io/fibbed/moderate.html`). It opens on tomorrow’s paper and shows:
+The editor’s desk is at `/moderate.html` (on GitHub Pages: `https://vertigovx.github.io/fibbed/moderate.html`). It opens on tomorrow’s round 3, the round player fibs run in, and shows:
 
 - the fib that will run that day (the house fib, or the player fib you picked)
 - every fib players sent for that day, with Run this fib, Reject and Restore
@@ -70,7 +74,7 @@ The workflow builds with your project’s URL and publishable key. To point it a
 
 ## Content
 
-`src/data/puzzles.ts` holds 14 days of puzzles. Past day 14 the set repeats, so add more before then. Each puzzle needs four true statements with sources, one fib and a short explanation of why the fib is false. The content tests catch missing sources, duplicate ids and fibs whose length gives them away.
+`src/data/puzzles.ts` holds 14 days of papers, split into easy, medium and hard lists (rounds 1, 2 and 3). Past day 14 the set repeats, so add more before then. Each round needs three true statements with sources, one fib and a short explanation of why the fib is false. The content tests catch missing sources, duplicate ids and fibs whose length gives them away.
 
 ## Ideas for later
 

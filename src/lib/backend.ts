@@ -2,14 +2,22 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Puzzle } from './types'
 
 export type SubmitResult = { ok: true } | { ok: false; error: string }
-export type PuzzleStats = { players: number; caught: number }
+export type PuzzleStats = { players: number; perfect: number; readerFooled: number }
 export type FeaturedFib = { text: string; author: string | null }
 
 export interface Backend {
   /** True when fibs and results reach the shared server. */
   online: boolean
   submitFib(input: { puzzleNumber: number; text: string; author: string; clientId: string }): Promise<SubmitResult>
-  recordResult(input: { puzzleNumber: number; clientId: string; picks: string[]; caught: boolean }): Promise<void>
+  recordResult(input: {
+    puzzleNumber: number
+    clientId: string
+    /** Picks per round. */
+    picks: string[][]
+    fibsCaught: number
+    /** Whether the player caught the round-3 (reader) fib. */
+    readerCaught: boolean
+  }): Promise<void>
   getStats(puzzleNumber: number): Promise<PuzzleStats | null>
   getFeaturedFib(puzzleNumber: number): Promise<FeaturedFib | null>
   /** The fib this device sent for a day, if any. */
@@ -50,9 +58,16 @@ export function supabaseBackend(client: SupabaseClient): Backend {
       if (error.code === '23505') return { ok: false, error: 'You have already sent a fib for this day.' }
       return { ok: false, error: 'Could not send your fib. Try again in a moment.' }
     },
-    async recordResult({ puzzleNumber, clientId, picks, caught }) {
+    async recordResult({ puzzleNumber, clientId, picks, fibsCaught, readerCaught }) {
       try {
-        await client.from('results').insert({ puzzle_number: puzzleNumber, client_id: clientId, picks, caught })
+        await client.from('results').insert({
+          puzzle_number: puzzleNumber,
+          client_id: clientId,
+          picks: picks.flat(),
+          caught: fibsCaught === picks.length,
+          fibs_caught: fibsCaught,
+          reader_caught: readerCaught,
+        })
       } catch {
         /* stats are best effort */
       }
@@ -60,8 +75,8 @@ export function supabaseBackend(client: SupabaseClient): Backend {
     async getStats(n) {
       const { data, error } = await client.rpc('puzzle_stats', { n })
       if (error) return null
-      const row = firstRow<PuzzleStats>(data)
-      return row ? { players: Number(row.players), caught: Number(row.caught) } : null
+      const row = firstRow<{ players: number; perfect: number; reader_fooled: number }>(data)
+      return row ? { players: Number(row.players), perfect: Number(row.perfect), readerFooled: Number(row.reader_fooled) } : null
     },
     async getFeaturedFib(n) {
       const { data, error } = await client.rpc('featured_fib', { n })
@@ -97,17 +112,26 @@ export function localBackend(): Backend {
   }
 }
 
+/** A featured community fib takes over round 3, the reader round. */
 export function withFeaturedFib(puzzle: Puzzle, featured: FeaturedFib | null): Puzzle {
   if (!featured) return puzzle
   const by = featured.author ? featured.author : 'a player'
+  const reader = puzzle.rounds[2]
   return {
     ...puzzle,
-    fib: {
-      id: puzzle.fib.id,
-      text: featured.text,
-      author: featured.author ?? undefined,
-      explanation: `Invented by ${by}, who wrote it after yesterday’s puzzle.`,
-    },
+    rounds: [
+      ...puzzle.rounds.slice(0, 2),
+      {
+        ...reader,
+        fib: {
+          id: reader.fib.id,
+          text: featured.text,
+          author: featured.author ?? undefined,
+          fromReader: true,
+          explanation: `Invented by ${by}, who wrote it after yesterday’s paper.`,
+        },
+      },
+    ],
   }
 }
 

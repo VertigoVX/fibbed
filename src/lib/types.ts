@@ -10,19 +10,40 @@ export type Fib = {
   source?: Source
   /** Handle of the player who wrote it, when it came from the community. */
   author?: string
+  /** True when a reader wrote it (round 3 only). */
+  fromReader?: boolean
 }
 
+export type Level = 'easy' | 'medium' | 'hard'
+
+/** One round: three truths and one fib on a theme. */
+export type Round = {
+  theme: string
+  level: Level
+  truths: Truth[]
+  fib: Fib
+}
+
+/** A day's paper: three rounds, easy to hard. Round 3 carries the reader fib. */
 export type Puzzle = {
   number: number
-  theme: string
-  truths: [Truth, Truth, Truth, Truth] | Truth[]
-  fib: Fib
+  rounds: Round[]
 }
 
 export type Statement = { id: string; text: string }
 
 export type GameStatus = 'playing' | 'caught' | 'fooled'
 
-export type GameState = { picks: string[]; status: GameStatus }
+export type RoundState = { picks: string[]; status: GameStatus }
 
-export type Outcome = { cleared: number; caught: boolean }
+export type DayState = { rounds: RoundState[] }
+
+export type RoundOutcome = { cleared: number; caught: boolean }
+
+export type DayOutcome = {
+  rounds: RoundOutcome[]
+  fibsCaught: number
+  cleared: number
+  perfect: boolean
+  done: boolean
+}
