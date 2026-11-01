@@ -7,6 +7,7 @@ export type Fib = {
   text: string
   /** Why it is false, shown after the reveal. */
   explanation: string
+  source?: Source
   /** Handle of the player who wrote it, when it came from the community. */
   author?: string
 }
