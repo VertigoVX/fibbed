@@ -6,6 +6,8 @@ export type PuzzleStats = { players: number; caught: number }
 export type FeaturedFib = { text: string; author: string | null }
 
 export interface Backend {
+  /** True when fibs and results reach the shared server. */
+  online: boolean
   submitFib(input: { puzzleNumber: number; text: string; author: string; clientId: string }): Promise<SubmitResult>
   recordResult(input: { puzzleNumber: number; clientId: string; picks: string[]; caught: boolean }): Promise<void>
   getStats(puzzleNumber: number): Promise<PuzzleStats | null>
@@ -36,6 +38,7 @@ const firstRow = <T,>(data: unknown): T | null => (Array.isArray(data) ? (data[0
 
 export function supabaseBackend(client: SupabaseClient): Backend {
   return {
+    online: true,
     async submitFib({ puzzleNumber, text, author, clientId }) {
       const { error } = await client
         .from('fibs')
@@ -75,6 +78,7 @@ export function supabaseBackend(client: SupabaseClient): Backend {
 /** Used when Supabase is not configured: everything stays on the device. */
 export function localBackend(): Backend {
   return {
+    online: false,
     async submitFib({ puzzleNumber, text }) {
       if (sentFibs()[puzzleNumber]) return { ok: false, error: 'You have already sent a fib for this day.' }
       rememberSent(puzzleNumber, text)

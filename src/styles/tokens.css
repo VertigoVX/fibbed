@@ -1,0 +1,77 @@
+/* Hallmark · v2.0.0 · genre: editorial · theme: Newsprint (by request: editorial / newsprint tone) · deal: manual (scripts absent from the published skill) · shape: app screen · posture: restrained · signature: the fib struck from the record and printed as a correction
+ * Hallmark · pre-emit critique: P4 H5 E4 S4 R5 V4 · weakest: P, a game screen argues little; the correction notice gives the reveal a newspaper's own voice instead of a confetti burst
+ * answered: 82 (the four progress ticks are live game state, not decorative counting marks) */
+
+:root {
+  /* Newsprint palette */
+  --color-paper: oklch(94% 0.011 92);
+  --color-paper-2: oklch(90.5% 0.015 88);
+  --color-paper-3: oklch(87% 0.017 86);
+  --color-ink: oklch(17% 0.012 60);
+  --color-ink-2: oklch(27% 0.012 58);
+  --color-muted: oklch(46% 0.014 60);
+  --color-rule: oklch(68% 0.016 75);
+  --color-rule-2: oklch(34% 0.012 60);
+  --color-accent: oklch(44% 0.13 32);
+  --color-accent-ink: oklch(95% 0.012 90);
+  --color-focus: oklch(48% 0.17 32);
+  --color-clear: transparent;
+
+  --font-display: 'Zilla Slab', ui-serif, Georgia, serif;
+  --font-body: 'Spectral', ui-serif, Georgia, serif;
+  --font-outlier: 'Libre Franklin', ui-sans-serif, system-ui, sans-serif;
+
+  --display-weight: 700;
+  --tracking-display: -0.02em;
+  --radius-card: 0;
+  --rule-hair: 1px;
+
+  /* Shared scale, mobile values; larger steps arrive at 60rem */
+  --text-display: 2.75rem;
+  --text-section: 2rem;
+  --text-title: 1.375rem;
+  --text-lead: 1.1875rem;
+  --text-md: 1.0625rem;
+  --text-sm: 0.9375rem;
+  --text-wordmark: 2.125rem;
+
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+  --space-3xl: 96px;
+
+  --measure: 40rem;
+  --gutter: var(--space-md);
+  --bar-height: 5.5rem;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+
+  --z-sticky: 200;
+}
+
+@media (min-width: 30rem) {
+  :root {
+    --gutter: var(--space-lg);
+    --text-display: 3.5rem;
+  }
+}
+
+@media (min-width: 60rem) {
+  :root {
+    --text-display: 5.25rem;
+    --text-section: 3.25rem;
+    --text-title: 1.5625rem;
+    --text-lead: 1.3125rem;
+    --text-wordmark: 2.5rem;
+    --measure: 72rem;
+  }
+}
