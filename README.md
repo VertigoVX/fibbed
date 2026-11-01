@@ -20,7 +20,7 @@ Without Supabase the game runs fully offline. Fibs stay on the device and there 
 
 ## How it is built
 
-- **Stack:** Vite, React 19 and TypeScript. Tests use Vitest, Testing Library, PGlite (an in-memory Postgres for the schema) and Playwright.
+- **Stack:** Vite, React 19 and TypeScript. Two pages: `index.html` (the game) and `moderate.html` (the editor’s desk). Tests use Vitest, Testing Library, PGlite (an in-memory Postgres for the schema) and Playwright.
 - **Developed test first.** Every module has its tests beside it:
   - `src/lib/date.ts`: the puzzle number for the player’s local day (launch day, 2 November 2026, is #1), unaffected by daylight-saving changes.
   - `src/lib/game.ts`: a statement order that is the same for every player, the pick rules, and the outcome.
@@ -43,7 +43,30 @@ What the schema enforces:
 - Players can record one result per day per device. Only totals are readable, through `puzzle_stats(n)`.
 - `featured_fib(n)` returns a day’s featured fib only once that day has started somewhere on Earth, so tomorrow’s fib can’t be read early.
 
-**Running a community fib:** read the pending fibs for a day in the table editor, then run `select feature_fib('<fib id>');` in the SQL editor. It replaces that day’s house fib, and the reveal credits the author.
+## Moderating fibs
+
+The editor’s desk is at `/moderate.html` (on GitHub Pages: `https://vertigovx.github.io/fibbed/moderate.html`). It opens on tomorrow’s paper and shows:
+
+- the fib that will run that day (the house fib, or the player fib you picked)
+- every fib players sent for that day, with Run this fib, Reject and Restore
+- other days that have fibs waiting
+
+To become an editor:
+
+1. Run `supabase/migrations/20261101120000_editors.sql` in the SQL editor (once, after the first migration).
+2. In Supabase, open Authentication > Users > Add user, and create yourself with an email and password (tick auto-confirm).
+3. In the SQL editor, run:
+   ```sql
+   insert into public.editors (user_id) select id from auth.users where email = 'you@example.com';
+   ```
+
+Only accounts in `editors` can read fibs or call the moderation functions. A signed-in account that isn’t an editor sees nothing, and players never need an account. Nobody can add an editor through the API; it has to be done in the SQL editor.
+
+## Deploying to GitHub Pages
+
+`.github/workflows/deploy.yml` tests, builds and publishes the site on every push to `main`. One-time setup: in the repo, open Settings > Pages and set Source to **GitHub Actions**. The site is served at `https://vertigovx.github.io/fibbed/`.
+
+The workflow builds with your project’s URL and publishable key. To point it at another project, add repository variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (Settings > Secrets and variables > Actions > Variables).
 
 ## Content
 
@@ -51,7 +74,6 @@ What the schema enforces:
 
 ## Ideas for later
 
-- A screen for moderating fibs (today that’s done in the SQL editor).
 - Let players vote on submitted fibs, so the community picks the one that runs.
 - An archive of past papers.
 - A share card image.

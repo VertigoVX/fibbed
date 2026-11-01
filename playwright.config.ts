@@ -11,9 +11,12 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
+    // A Supabase address nothing listens on: the game falls back to offline at once,
+    // and the editor tests mock it with page.route.
     command: 'npm run build && npx vite preview --port 4173 --strictPort',
+    env: { VITE_SUPABASE_URL: 'http://127.0.0.1:4174', VITE_SUPABASE_ANON_KEY: 'test-key' },
     url: 'http://localhost:4173',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
   projects: [

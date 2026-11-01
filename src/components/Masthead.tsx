@@ -7,7 +7,7 @@ export function Masthead({ number, date }: { number: number; date: Date }) {
   return (
     <header className="masthead">
       <div className="masthead__bar">
-        <a className="wordmark" href="/" aria-label="Fibbed, today’s paper">
+        <a className="wordmark" href={import.meta.env.BASE_URL} aria-label="Fibbed, today’s paper">
           Fibbed
         </a>
         <p className="dateline">

@@ -1,0 +1,217 @@
+/* Editor's desk (moderate.html). Same Newsprint tokens; app-screen density. Mobile first. */
+
+.desk {
+  padding-bottom: var(--space-2xl);
+}
+
+.btn--quiet {
+  min-height: 44px;
+  padding-inline: var(--space-xs);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--text-sm);
+  color: var(--color-ink-2);
+  text-decoration: underline;
+  text-decoration-color: var(--color-rule);
+  text-underline-offset: 0.2em;
+}
+
+.btn--quiet:hover {
+  color: var(--color-ink);
+  text-decoration-color: var(--color-ink);
+}
+
+.desk__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  padding-block: var(--space-sm);
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+}
+
+.desk__days {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.desk .lede h1 {
+  font-size: var(--text-section);
+  max-width: 20ch;
+}
+
+.desk__dayline {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font: 500 var(--text-sm) / 1.4 var(--font-body);
+  letter-spacing: 0;
+  color: var(--color-muted);
+}
+
+.desk h2 {
+  font-size: var(--text-title);
+  padding-bottom: var(--space-sm);
+}
+
+.desk__columns {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.desk__main {
+  display: grid;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.desk__running {
+  display: grid;
+  gap: var(--space-xs);
+  justify-items: start;
+  padding: var(--space-md) 0 var(--space-lg);
+  border-block: var(--rule-hair) solid var(--color-rule-2);
+}
+
+.desk__quote {
+  font: var(--display-weight) var(--text-title) / 1.25 var(--font-display);
+  letter-spacing: var(--tracking-display);
+}
+
+.desk__quote::before {
+  content: '\201C';
+}
+
+.desk__quote::after {
+  content: '\201D';
+}
+
+.desk__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+.desk__status {
+  min-height: 1lh;
+  font-weight: 500;
+  font-size: var(--text-sm);
+}
+
+.desk__status:empty,
+.desk .field__error:empty {
+  display: none;
+}
+
+.desk__empty {
+  color: var(--color-muted);
+}
+
+.desk__fibs,
+.desk__waiting {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: var(--rule-hair) solid var(--color-rule-2);
+}
+
+.desk__fib {
+  display: grid;
+  gap: var(--space-xs);
+  padding-block: var(--space-md);
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+}
+
+.desk__fibtext {
+  font-size: var(--text-lead);
+  line-height: 1.4;
+}
+
+.desk__fib[data-status='rejected'] .desk__fibtext {
+  color: var(--color-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--color-rule);
+}
+
+.desk__label {
+  color: var(--color-ink);
+}
+
+.desk__fib[data-featured] .desk__label {
+  color: var(--color-accent);
+}
+
+.desk__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.desk__waiting li {
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+}
+
+.desk__waiting a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: 48px;
+  padding-block: var(--space-xs);
+}
+
+.desk__waiting .agate {
+  color: var(--color-ink-2);
+  font-size: var(--text-sm);
+}
+
+.desk__notice,
+.desk__signin {
+  display: grid;
+  gap: var(--space-md);
+  justify-items: start;
+  padding-top: var(--space-xl);
+  max-width: 34rem;
+}
+
+.desk__notice h1,
+.desk__signin h1 {
+  font-size: var(--text-section);
+}
+
+.desk pre {
+  width: 100%;
+  margin: 0;
+  padding: var(--space-md);
+  overflow-x: auto;
+  background: var(--color-paper-2);
+  border-block: var(--rule-hair) solid var(--color-rule);
+  font-size: var(--text-sm);
+}
+
+@media (min-width: 60rem) {
+  /* The game's sticky two-column lede does not apply on the desk */
+  .paper.desk {
+    display: block;
+  }
+
+  .paper.desk > .lede {
+    position: static;
+    padding-top: var(--space-lg);
+  }
+
+  .desk__columns {
+    grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+    column-gap: var(--space-2xl);
+    align-items: start;
+  }
+
+  .desk__side {
+    position: sticky;
+    top: var(--space-lg);
+  }
+}

@@ -1,34 +1,21 @@
 // @vitest-environment node
-import { PGlite } from '@electric-sql/pglite'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import type { PGlite } from '@electric-sql/pglite'
+import { as, freshDb } from './db'
 
-const migration = readFileSync(resolve(__dirname, '../../supabase/migrations/20261101000000_init.sql'), 'utf8')
 const A = '11111111-1111-1111-1111-111111111111'
 const B = '22222222-2222-2222-2222-222222222222'
 
 let db: PGlite
 
 beforeEach(async () => {
-  db = new PGlite()
-  // Supabase provides these roles; recreate them for the test database.
-  await db.exec(`create role anon nologin; create role authenticated nologin;`)
-  await db.exec(migration)
-  await db.exec(`grant usage on schema public to anon; grant insert on public.fibs, public.results to anon;`)
+  db = await freshDb()
 })
 
 afterEach(async () => {
   await db.close()
 })
 
-const asAnon = async <T,>(sql: string, params: unknown[] = []) => {
-  await db.exec('set role anon')
-  try {
-    return await db.query<T>(sql, params)
-  } finally {
-    await db.exec('reset role')
-  }
-}
+const asAnon = <T,>(sql: string, params: unknown[] = []) => as<T>(db, 'anon', sql, params)
 
 describe('fibs', () => {
   it('lets a player send a pending fib', async () => {
@@ -55,7 +42,16 @@ describe('fibs', () => {
 
   it('hides fibs from players', async () => {
     await asAnon(`insert into fibs (puzzle_number, text, client_id) values (3, 'Octopuses can count to ten easily.', $1)`, [A])
-    await expect(asAnon('select * from fibs')).rejects.toThrow(/permission denied/)
+    const { rows } = await asAnon('select * from fibs')
+    expect(rows).toEqual([])
+  })
+
+  it('stops players changing or deleting fibs', async () => {
+    await asAnon(`insert into fibs (puzzle_number, text, client_id) values (3, 'Octopuses can count to ten easily.', $1)`, [A])
+    await asAnon(`update fibs set status = 'approved', featured = true`)
+    await asAnon(`delete from fibs`)
+    const { rows } = await db.query<{ status: string }>('select status from fibs')
+    expect(rows).toEqual([{ status: 'pending' }])
   })
 })
 
@@ -94,7 +90,7 @@ describe('featured_fib', () => {
 
   it('cannot be called by players to feature a fib', async () => {
     const id = await featured(1)
-    await expect(asAnon('select feature_fib($1)', [id])).rejects.toThrow(/permission denied/)
+    await expect(asAnon('select feature_fib($1)', [id])).rejects.toThrow(/permission denied|not an editor/)
   })
 })
 
@@ -110,6 +106,8 @@ describe('results and stats', () => {
   })
 
   it('hides individual results', async () => {
-    await expect(asAnon('select * from results')).rejects.toThrow(/permission denied/)
+    await asAnon(`insert into results (puzzle_number, client_id, picks, caught) values (2, $1, '{fib}', false)`, [A])
+    const { rows } = await asAnon('select * from results')
+    expect(rows).toEqual([])
   })
 })

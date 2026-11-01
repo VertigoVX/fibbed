@@ -6,6 +6,13 @@ const TRUTHS = ['Saturn is less dense', 'A single day on Venus', 'Olympus Mons',
 const FIB = 'Mercury is the hottest'
 
 test.beforeEach(async ({ page }) => {
+  // A quiet Supabase: no featured fib, no stats yet, and every insert accepted.
+  await page.route('http://127.0.0.1:4174/**', (route) => {
+    const req = route.request()
+    if (req.method() === 'POST' && req.url().includes('/rpc/')) return route.fulfill({ json: [] })
+    if (req.method() === 'POST') return route.fulfill({ status: 201, body: '' })
+    return route.fulfill({ json: [] })
+  })
   await page.clock.setFixedTime(DAY)
   await page.goto('/')
   await expect(page.getByRole('list', { name: 'Statements' })).toBeVisible()
@@ -66,6 +73,7 @@ test('getting fibbed, then writing tomorrow’s fib', async ({ page }) => {
   await page.getByLabel('Your fib').fill('Your little toe has no bones in it at all.')
   await page.getByRole('button', { name: 'Send fib' }).click()
   await expect(page.getByText('“Your little toe has no bones in it at all.”')).toBeVisible()
+  await expect(page.getByText(/Filed\. If the editor picks it/)).toBeVisible()
   await noSideScroll(page)
 })
 

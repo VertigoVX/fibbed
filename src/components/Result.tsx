@@ -7,7 +7,7 @@ import type { GameState, Puzzle } from '../lib/types'
 
 type Props = { puzzle: Puzzle; game: GameState; stats: Stats; backend: Backend }
 
-const SHARE_URL = typeof location !== 'undefined' ? location.origin : 'https://fibbed.game'
+const SHARE_URL = typeof location !== 'undefined' ? new URL(import.meta.env.BASE_URL, location.origin).href : 'https://fibbed.game'
 
 export function Result({ puzzle, game, stats, backend }: Props) {
   const outcome = outcomeOf(game, puzzle)

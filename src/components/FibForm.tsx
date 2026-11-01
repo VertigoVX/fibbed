@@ -66,7 +66,7 @@ export function FibForm({ number, backend, clientId }: Props) {
         </div>
       ) : (
         <form className="write__form" onSubmit={submit} noValidate>
-          <p className="lead">Write a fib about {tomorrow.theme.toLowerCase()}. The one that fools the most people runs tomorrow.</p>
+          <p className="lead">Write a fib about {tomorrow.theme.toLowerCase()}. The editor picks one to run tomorrow, with its writer’s name on it.</p>
           <div className="field">
             <label htmlFor={ids.text}>Your fib</label>
             <textarea
