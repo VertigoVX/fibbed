@@ -3,6 +3,6 @@ import { afterEach } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
 afterEach(() => {
-  cleanup()
-  localStorage.clear()
+  if (typeof document !== 'undefined') cleanup()
+  if (typeof localStorage !== 'undefined') localStorage.clear()
 })
