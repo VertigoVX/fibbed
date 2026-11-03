@@ -182,6 +182,18 @@ describe('accounts (supabase)', () => {
   })
 })
 
+describe('getPuzzle', () => {
+  it('returns null when the RPC returns an empty array (no approved puzzle)', async () => {
+    const s = fakeSupabase({ rpc: { get_approved_puzzle: { data: [], error: null } } })
+    expect(await supabaseBackend(s.client).getPuzzle(3)).toBeNull()
+  })
+
+  it('returns null when the RPC returns null', async () => {
+    const s = fakeSupabase({ rpc: { get_approved_puzzle: { data: null, error: null } } })
+    expect(await supabaseBackend(s.client).getPuzzle(3)).toBeNull()
+  })
+})
+
 describe('accounts (offline)', () => {
   it('cannot sign in without the server', async () => {
     const b = localBackend()

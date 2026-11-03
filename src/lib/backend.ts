@@ -141,7 +141,7 @@ export function supabaseBackend(client: SupabaseClient): Backend {
     },
     async getPuzzle(n) {
       const { data, error } = await client.rpc('get_approved_puzzle', { n })
-      if (error || !data) return null
+      if (error || !Array.isArray(data) || data.length === 0) return null
       return parsePuzzle(n, data as DraftRound[])
     },
   }
