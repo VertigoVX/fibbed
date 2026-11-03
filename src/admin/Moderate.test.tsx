@@ -51,6 +51,13 @@ function memoryApi(opts: { signedIn?: boolean; editor?: boolean; fibs?: EditorFi
     async useHouseFib(n) {
       fibs.filter((f) => f.puzzleNumber === n).forEach((f) => (f.featured = false))
     },
+    async drafts() {
+      return []
+    },
+    async approveDraft() {
+      return 1
+    },
+    async rejectDraft() {},
   }
   return api
 }
