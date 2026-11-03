@@ -1,0 +1,38 @@
+name: Generate daily puzzle draft
+
+on:
+  schedule:
+    # 21:00 UTC = 23:00 SAST — runs each evening, generating the next day's candidate
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Puzzle topic (leave blank for automatic)'
+        required: false
+        default: ''
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Generate and insert draft
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          TOPIC="${{ github.event.inputs.topic }}"
+          if [ -z "$TOPIC" ]; then
+            node scripts/generate-puzzle.mjs
+          else
+            node scripts/generate-puzzle.mjs "$TOPIC"
+          fi
