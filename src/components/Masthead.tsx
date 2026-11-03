@@ -24,6 +24,10 @@ type Props = {
   account?: { signedIn: boolean; onOpen: () => void }
 }
 
+function isElectionDay(d: Date) {
+  return d.getFullYear() === 2026 && d.getMonth() === 10 && d.getDate() === 4
+}
+
 export function Masthead({ number, date, streak, archive, account }: Props) {
   const [open, setOpen] = useState(defaultOpen)
 
@@ -43,7 +47,7 @@ export function Masthead({ number, date, streak, archive, account }: Props) {
   return (
     <header className="masthead">
       <div className="masthead__bar">
-        <a className="wordmark" href={import.meta.env.BASE_URL} aria-label="Fibbed, today's paper">
+        <a className={`wordmark${isElectionDay(date) ? ' wordmark--election' : ''}`} href={import.meta.env.BASE_URL} aria-label="Fibbed, today's paper">
           Fibbed
         </a>
         <p className="dateline">

@@ -121,6 +121,24 @@ a:hover {
   text-decoration: none;
 }
 
+/* SA flag colours: black · gold · green · white · red · blue */
+.wordmark--election {
+  background: linear-gradient(
+    to right,
+    #000 0%,
+    #FFB81C 18%,
+    #007A4D 32%,
+    #fff 48%,
+    #007A4D 54%,
+    #E03C31 72%,
+    #002395 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
 .dateline {
   display: flex;
   gap: var(--space-sm);
