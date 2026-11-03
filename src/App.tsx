@@ -19,15 +19,17 @@ const FEATURED_TIMEOUT_MS = 1500
 const history_ = typeof window !== 'undefined' ? window.history : (undefined as unknown as History)
 const LEVEL_NAME = { easy: 'easy', medium: 'medium', hard: 'hard' } as const
 
-/** Waits briefly for a reader fib; the house fib runs if the server is slow. */
+/** Waits briefly for an approved puzzle and reader fib; falls back to static data if the server is slow. */
 function useTodaysPuzzle(number: number, backend: Backend): Puzzle | null {
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null)
   useEffect(() => {
     let live = true
-    const base = getPuzzle(number)
     const timeout = new Promise<null>((r) => setTimeout(() => r(null), FEATURED_TIMEOUT_MS))
-    Promise.race([backend.getFeaturedFib(number).catch(() => null), timeout]).then((featured) => {
-      if (live) setPuzzle(withFeaturedFib(base, featured))
+    Promise.all([
+      Promise.race([backend.getPuzzle(number).catch(() => null), timeout]),
+      Promise.race([backend.getFeaturedFib(number).catch(() => null), timeout]),
+    ]).then(([approved, featured]) => {
+      if (live) setPuzzle(withFeaturedFib(approved ?? getPuzzle(number), featured))
     })
     return () => {
       live = false

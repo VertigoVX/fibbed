@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Puzzle } from './types'
+import type { Level, Puzzle, Round } from './types'
 import type { HistoryEntry } from './stats'
 
 export type SubmitResult = { ok: true } | { ok: false; error: string }
@@ -41,6 +41,8 @@ export interface Backend {
   getFeaturedFib(puzzleNumber: number): Promise<FeaturedFib | null>
   /** The fib this device sent for a day, if any. */
   getSubmittedFib(puzzleNumber: number): Promise<string | null>
+  /** Returns an AI-generated puzzle approved by an editor, or null (use static fallback). */
+  getPuzzle(number: number): Promise<Puzzle | null>
 }
 
 const SENT_KEY = 'fibbed:sent'
@@ -62,6 +64,30 @@ function rememberSent(n: number, text: string) {
 }
 
 const firstRow = <T,>(data: unknown): T | null => (Array.isArray(data) ? (data[0] ?? null) : ((data as T) ?? null))
+
+type DraftTruth = { text: string; source_url: string; source_label: string }
+type DraftFib = { text: string; explanation: string; source_url: string; source_label: string }
+type DraftRound = { theme: string; level: Level; truths: DraftTruth[]; fib: DraftFib }
+
+function parsePuzzle(number: number, draftRounds: DraftRound[]): Puzzle {
+  const prefix = `p${number}`
+  const rounds: Round[] = draftRounds.map((dr, r) => ({
+    theme: dr.theme,
+    level: dr.level,
+    truths: dr.truths.map((t, j) => ({
+      id: `${prefix}-r${r + 1}-t${j + 1}`,
+      text: t.text,
+      source: { label: t.source_label, url: t.source_url },
+    })),
+    fib: {
+      id: `${prefix}-r${r + 1}-fib`,
+      text: dr.fib.text,
+      explanation: dr.fib.explanation,
+      source: { label: dr.fib.source_label, url: dr.fib.source_url },
+    },
+  }))
+  return { number, rounds }
+}
 
 export function supabaseBackend(client: SupabaseClient): Backend {
   return {
@@ -112,6 +138,11 @@ export function supabaseBackend(client: SupabaseClient): Backend {
     },
     async getSubmittedFib(n) {
       return sentFibs()[n] ?? null
+    },
+    async getPuzzle(n) {
+      const { data, error } = await client.rpc('get_approved_puzzle', { n })
+      if (error || !data) return null
+      return parsePuzzle(n, data as DraftRound[])
     },
   }
 }
@@ -190,6 +221,9 @@ export function localBackend(): Backend {
     },
     async getSubmittedFib(n) {
       return sentFibs()[n] ?? null
+    },
+    async getPuzzle() {
+      return null
     },
   }
 }

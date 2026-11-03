@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type FibStatus = 'pending' | 'approved' | 'rejected'
+export type DraftStatus = 'pending' | 'approved' | 'rejected'
 
 export type EditorFib = {
   id: string
@@ -10,6 +11,15 @@ export type EditorFib = {
   status: FibStatus
   featured: boolean
   createdAt: string
+}
+
+export type PuzzleDraft = {
+  id: string
+  rounds: unknown
+  status: DraftStatus
+  puzzleNumber: number | null
+  generatedAt: string
+  notes: string | null
 }
 
 export type DayCounts = Record<number, { pending: number; total: number }>
@@ -24,6 +34,9 @@ export interface EditorApi {
   feature(id: string): Promise<void>
   setStatus(id: string, status: FibStatus): Promise<void>
   useHouseFib(puzzleNumber: number): Promise<void>
+  drafts(): Promise<PuzzleDraft[]>
+  approveDraft(id: string): Promise<number>
+  rejectDraft(id: string): Promise<void>
 }
 
 type Row = {
@@ -94,6 +107,28 @@ export function supabaseEditorApi(client: SupabaseClient): EditorApi {
     },
     async useHouseFib(n) {
       await call('use_house_fib', { n })
+    },
+    async drafts() {
+      const { data, error } = await client
+        .from('puzzle_drafts')
+        .select('id, rounds, status, puzzle_number, generated_at, notes')
+        .neq('status', 'rejected')
+        .order('generated_at', { ascending: false })
+      if (error) throw new Error(`Could not load drafts. ${error.message}`)
+      return ((data ?? []) as { id: string; rounds: unknown; status: DraftStatus; puzzle_number: number | null; generated_at: string; notes: string | null }[]).map((r) => ({
+        id: r.id,
+        rounds: r.rounds,
+        status: r.status,
+        puzzleNumber: r.puzzle_number,
+        generatedAt: r.generated_at,
+        notes: r.notes,
+      }))
+    },
+    async approveDraft(id) {
+      return await call('approve_draft', { draft_id: id }) as number
+    },
+    async rejectDraft(id) {
+      await call('reject_draft', { draft_id: id })
     },
   }
 }

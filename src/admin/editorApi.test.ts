@@ -3,8 +3,9 @@ import { supabaseEditorApi } from './editorApi'
 
 function fake(opts: { rpc?: Record<string, unknown>; rows?: unknown; signIn?: unknown; session?: unknown } = {}) {
   const order = vi.fn().mockResolvedValue(opts.rows ?? { data: [], error: null })
+  const neq = vi.fn(() => ({ order }))
   const eq = vi.fn(() => ({ order }))
-  const select = vi.fn(() => ({ eq }))
+  const select = vi.fn(() => ({ eq, neq }))
   const from = vi.fn(() => ({ select }))
   const rpc = vi.fn((name: string) => Promise.resolve(opts.rpc?.[name] ?? { data: null, error: null }))
   const auth = {
@@ -12,7 +13,7 @@ function fake(opts: { rpc?: Record<string, unknown>; rows?: unknown; signIn?: un
     signOut: vi.fn().mockResolvedValue({ error: null }),
     getSession: vi.fn().mockResolvedValue(opts.session ?? { data: { session: null } }),
   }
-  return { client: { from, rpc, auth } as never, from, select, eq, order, rpc, auth }
+  return { client: { from, rpc, auth } as never, from, select, eq, neq, order, rpc, auth }
 }
 
 describe('supabaseEditorApi', () => {
@@ -82,5 +83,31 @@ describe('supabaseEditorApi', () => {
   it('throws when a moderation call is refused', async () => {
     const f = fake({ rpc: { feature_fib: { data: null, error: { message: 'not an editor' } } } })
     await expect(supabaseEditorApi(f.client).feature('f1')).rejects.toThrow(/not an editor/)
+  })
+
+  it('loads all non-rejected drafts, newest first', async () => {
+    const rounds = [{ theme: 'Penguins' }]
+    const f = fake({
+      rows: {
+        data: [
+          { id: 'd1', rounds, status: 'pending', puzzle_number: null, generated_at: '2026-11-03T00:00:00Z', notes: null },
+        ],
+        error: null,
+      },
+    })
+    expect(await supabaseEditorApi(f.client).drafts()).toEqual([
+      { id: 'd1', rounds, status: 'pending', puzzleNumber: null, generatedAt: '2026-11-03T00:00:00Z', notes: null },
+    ])
+    expect(f.from).toHaveBeenCalledWith('puzzle_drafts')
+    expect(f.order).toHaveBeenCalledWith('generated_at', { ascending: false })
+  })
+
+  it('calls approve_draft and reject_draft via rpc', async () => {
+    const f = fake({ rpc: { approve_draft: { data: 5, error: null }, reject_draft: { data: null, error: null } } })
+    const api = supabaseEditorApi(f.client)
+    expect(await api.approveDraft('d1')).toBe(5)
+    await api.rejectDraft('d2')
+    expect(f.rpc).toHaveBeenCalledWith('approve_draft', { draft_id: 'd1' })
+    expect(f.rpc).toHaveBeenCalledWith('reject_draft', { draft_id: 'd2' })
   })
 })

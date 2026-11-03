@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useId, useState, type FormEvent, type MouseEvent } from 'react'
 import { getPuzzle } from '../data/puzzles'
 import { dateForPuzzle, puzzleNumberFor } from '../lib/date'
-import type { DayCounts, EditorApi, EditorFib, FibStatus } from './editorApi'
+import type { DayCounts, EditorApi, EditorFib, FibStatus, PuzzleDraft } from './editorApi'
 
 type Props = { api: EditorApi; now?: Date }
 type Phase = 'loading' | 'signedOut' | 'notEditor' | 'desk'
+type DeskTab = 'fibs' | 'drafts'
 
 const dayFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
 const timeFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -118,6 +119,7 @@ function SignIn({ api, onSignedIn }: { api: EditorApi; onSignedIn: () => Promise
 
 function Desk({ api, now, onSignOut }: { api: EditorApi; now: Date; onSignOut: () => void }) {
   const tomorrow = puzzleNumberFor(now) + 1
+  const [tab, setTab] = useState<DeskTab>('fibs')
   const [day, setDayState] = useState(() => dayFromUrl(tomorrow))
   const [fibs, setFibs] = useState<EditorFib[] | null>(null)
   const [counts, setCounts] = useState<DayCounts>({})
@@ -178,12 +180,12 @@ function Desk({ api, now, onSignOut }: { api: EditorApi; now: Date; onSignOut: (
   return (
     <>
       <div className="desk__bar">
-        <nav className="desk__days" aria-label="Day">
-          <button type="button" className="btn btn--secondary" onClick={() => setDay(day - 1)} disabled={day <= 1}>
-            Previous day
+        <nav className="desk__tabs" aria-label="Section" role="tablist">
+          <button type="button" role="tab" aria-selected={tab === 'fibs'} className={`btn ${tab === 'fibs' ? 'btn--primary' : 'btn--secondary'}`} onClick={() => setTab('fibs')}>
+            Fibs
           </button>
-          <button type="button" className="btn btn--secondary" onClick={() => setDay(day + 1)}>
-            Next day
+          <button type="button" role="tab" aria-selected={tab === 'drafts'} className={`btn ${tab === 'drafts' ? 'btn--primary' : 'btn--secondary'}`} onClick={() => setTab('drafts')}>
+            Puzzle drafts
           </button>
         </nav>
         <button type="button" className="btn btn--quiet" onClick={onSignOut}>
@@ -191,17 +193,36 @@ function Desk({ api, now, onSignOut }: { api: EditorApi; now: Date; onSignOut: (
         </button>
       </div>
 
-      <header className="lede">
-        <h1>
-          <span className="desk__dayline">
-            No. {day}, {dayFormat.format(dateForPuzzle(day))}
-            {day === tomorrow ? ' (tomorrow)' : ''}, round 3
-          </span>{' '}
-          {reader.theme}
-        </h1>
-      </header>
+      {tab === 'fibs' && (
+        <>
+          <div className="desk__bar desk__bar--secondary">
+            <nav className="desk__days" aria-label="Day">
+              <button type="button" className="btn btn--secondary" onClick={() => setDay(day - 1)} disabled={day <= 1}>
+                Previous day
+              </button>
+              <button type="button" className="btn btn--secondary" onClick={() => setDay(day + 1)}>
+                Next day
+              </button>
+            </nav>
+          </div>
 
-      <div className="desk__columns">
+          <header className="lede">
+            <h1>
+              <span className="desk__dayline">
+                No. {day}, {dayFormat.format(dateForPuzzle(day))}
+                {day === tomorrow ? ' (tomorrow)' : ''}, round 3
+              </span>{' '}
+              {reader.theme}
+            </h1>
+          </header>
+        </>
+      )}
+
+      {tab === 'drafts' && (
+        <DraftsPanel api={api} onNotice={setNotice} onError={setError} notice={notice} error={error} />
+      )}
+
+      {tab === 'fibs' && <div className="desk__columns">
         <div className="desk__main">
           <section className="desk__running" aria-labelledby="running-head">
             <h2 id="running-head">Running on this day</h2>
@@ -300,9 +321,108 @@ function Desk({ api, now, onSignOut }: { api: EditorApi; now: Date; onSignOut: (
             </ul>
           )}
         </aside>
-      </div>
+      </div>}
     </>
   )
 }
 
 const rank = (f: EditorFib) => (f.featured ? 0 : f.status === 'pending' ? 1 : f.status === 'approved' ? 2 : 3)
+
+type DraftRound = { theme: string; level: string; truths: { text: string }[]; fib: { text: string; explanation: string } }
+
+function DraftsPanel({ api, notice, error, onNotice, onError }: { api: EditorApi; notice: string | null; error: string | null; onNotice: (s: string | null) => void; onError: (s: string | null) => void }) {
+  const [drafts, setDrafts] = useState<PuzzleDraft[] | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [expanded, setExpanded] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    try {
+      setDrafts(await api.drafts())
+    } catch (e) {
+      onError((e as Error).message)
+      setDrafts((cur) => cur ?? [])
+    }
+  }, [api, onError])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  async function act(run: () => Promise<void>, done: string) {
+    setBusy(true)
+    onNotice(null)
+    onError(null)
+    try {
+      await run()
+      onNotice(done)
+      await load()
+    } catch (e) {
+      onError(`That didn't go through. ${(e as Error).message}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const pending = drafts?.filter((d) => d.status === 'pending') ?? []
+  const approved = drafts?.filter((d) => d.status === 'approved') ?? []
+
+  return (
+    <div className="desk__drafts">
+      <p className="desk__status" role="status">{notice}</p>
+      <p className="field__error" role="alert">{error}</p>
+
+      <section aria-labelledby="drafts-pending-head">
+        <h2 id="drafts-pending-head">Pending drafts</h2>
+        {drafts === null ? (
+          <p className="loading">Loading drafts…</p>
+        ) : pending.length === 0 ? (
+          <p className="desk__empty">No drafts waiting for review.</p>
+        ) : (
+          <ol className="desk__fibs">
+            {pending.map((d) => (
+              <li key={d.id} className="desk__fib" data-status={d.status}>
+                <p className="desk__meta agate">
+                  <time dateTime={d.generatedAt}>{timeFormat.format(new Date(d.generatedAt))}</time>
+                  <span>3 rounds</span>
+                </p>
+                {(d.rounds as DraftRound[]).map((r, i) => (
+                  <details key={i} open={expanded === `${d.id}-${i}`} onToggle={(e) => { if ((e.target as HTMLDetailsElement).open) setExpanded(`${d.id}-${i}`) }}>
+                    <summary className="desk__fibtext">Round {i + 1}: {r.theme} ({r.level})</summary>
+                    <ol className="desk__round-truths">
+                      {r.truths.map((t, j) => <li key={j}>{t.text}</li>)}
+                    </ol>
+                    <p className="desk__fibtext"><strong>Fib:</strong> {r.fib.text}</p>
+                    <p className="desk__meta">{r.fib.explanation}</p>
+                  </details>
+                ))}
+                {d.notes && <p className="desk__meta">{d.notes}</p>}
+                <div className="desk__actions">
+                  <button type="button" className="btn btn--primary" disabled={busy} onClick={() => act(() => api.approveDraft(d.id).then(() => {}), 'Draft approved and assigned a puzzle number.')}>
+                    Approve
+                  </button>
+                  <button type="button" className="btn btn--quiet" disabled={busy} onClick={() => act(() => api.rejectDraft(d.id), 'Draft rejected.')}>
+                    Reject
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
+
+      {approved.length > 0 && (
+        <section aria-labelledby="drafts-approved-head">
+          <h2 id="drafts-approved-head">Approved puzzles</h2>
+          <ul className="desk__fibs">
+            {approved.map((d) => (
+              <li key={d.id} className="desk__fib" data-status={d.status}>
+                <p className="desk__fibtext">No. {d.puzzleNumber} — {(d.rounds as DraftRound[])[0].theme}, {(d.rounds as DraftRound[])[1].theme}, {(d.rounds as DraftRound[])[2].theme}</p>
+                <p className="desk__meta agate"><time dateTime={d.generatedAt}>{timeFormat.format(new Date(d.generatedAt))}</time></p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  )
+}
