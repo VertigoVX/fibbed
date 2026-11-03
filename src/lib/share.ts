@@ -1,7 +1,13 @@
-import type { DayOutcome } from './types'
+import type { DayOutcome, Round } from './types'
 
-export function shareText(number: number, outcome: DayOutcome, url: string): string {
-  const lines = outcome.rounds.map((r) => '🟩'.repeat(r.cleared) + (r.caught ? '🕵️' : '🟥'))
-  const total = `${outcome.fibsCaught} of ${outcome.rounds.length} fibs caught`
-  return [`Fibbed #${number}`, ...lines, outcome.perfect ? `Perfect paper: ${total}` : total, url].join('\n')
+export function shareText(number: number, outcome: DayOutcome, url: string, rounds?: Round[]): string {
+  const caught = outcome.fibsCaught
+  const total = outcome.rounds.length
+  const header = `Fibbed No. ${number} — ${caught}/${total}${outcome.perfect ? ' ✦' : ''}`
+  const roundLines = outcome.rounds.map((r, i) => {
+    const icon = r.caught ? '✅' : '❌'
+    const theme = rounds?.[i]?.theme ?? `Round ${i + 1}`
+    return `${icon} ${theme}`
+  })
+  return [header, roundLines.join('  '), url].join('\n')
 }

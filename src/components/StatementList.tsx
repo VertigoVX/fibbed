@@ -10,6 +10,7 @@ type Props = {
 
 export function StatementList({ round, statements, state, selected, onSelect }: Props) {
   const ended = state.status !== 'playing'
+  const sourceMap = new Map(round.truths.map((t) => [t.id, t.source]))
   return (
     <ol className="statements" aria-label="Statements">
       {statements.map((s, i) => {
@@ -18,8 +19,9 @@ export function StatementList({ round, statements, state, selected, onSelect }: 
         const picked = selected === s.id
         const verdict = ended ? (isFib ? 'fib' : 'true') : cleared ? 'true' : null
         const label = ended ? (isFib ? 'The fib' : 'True') : cleared ? 'Cleared, true' : picked ? 'Selected' : ''
+        const shownSource = ended && !isFib ? sourceMap.get(s.id) : null
         return (
-          <li key={s.id} className="statement" data-verdict={verdict ?? undefined} data-selected={picked || undefined}>
+          <li key={s.id} className="statement" data-verdict={verdict ?? undefined} data-selected={picked || undefined} data-cleared={(cleared && !ended) || undefined}>
             <button
               type="button"
               className="statement__button"
@@ -33,6 +35,11 @@ export function StatementList({ round, statements, state, selected, onSelect }: 
               <span className="statement__text">{s.text}</span>
               {label && <span className="statement__state">{label}</span>}
             </button>
+            {shownSource && (
+              <a className="statement__source" href={shownSource.url} target="_blank" rel="noreferrer">
+                {shownSource.label}
+              </a>
+            )}
           </li>
         )
       })}

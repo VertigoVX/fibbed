@@ -156,7 +156,7 @@ describe('the final paper', () => {
     const writeText = vi.spyOn(navigator.clipboard, 'writeText')
     await playDay(user, ['catch', 'fooled', 'catch'])
     await user.click(screen.getByRole('button', { name: 'Share result' }))
-    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Fibbed #3\n🟩🟩🟩🕵️\n🟥\n🟩🟩🟩🕵️\n2 of 3 fibs caught'))
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Fibbed No. 3 — 2/3'))
     expect(await screen.findByText('Copied. Paste it anywhere.')).toBeInTheDocument()
   })
 })

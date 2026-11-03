@@ -10,7 +10,6 @@ import { StatementList } from './components/StatementList'
 import { ActionBar } from './components/ActionBar'
 import { RoundVerdict } from './components/RoundVerdict'
 import { Summary } from './components/Summary'
-import { FibForm } from './components/FibForm'
 import { AccountPage } from './components/AccountPage'
 import { SHARE_URL } from './components/Summary'
 
@@ -38,7 +37,8 @@ function useTodaysPuzzle(number: number, backend: Backend): Puzzle | null {
 }
 
 export default function App({ backend, now = new Date(), clientId = 'anonymous' }: Props) {
-  const number = useMemo(() => puzzleNumberFor(now), [now])
+  const today = useMemo(() => puzzleNumberFor(now), [now])
+  const [number, setNumber] = useState(today)
   const puzzle = useTodaysPuzzle(number, backend)
   const [day, setDay] = useState<DayState | null>(null)
   /** The round on screen. It stays on a finished round until the player moves on. */
@@ -50,14 +50,15 @@ export default function App({ backend, now = new Date(), clientId = 'anonymous' 
   const [page, setPage] = useState<'game' | 'account'>(() =>
     typeof location !== 'undefined' && location.hash === '#papers' ? 'account' : 'game',
   )
+  const [fibRan, setFibRan] = useState<string | null>(null)
   const heading = useRef<HTMLHeadingElement>(null)
   const moved = useRef(false)
   const saved = useRef<Promise<unknown>>(Promise.resolve())
   const account = backend.account
 
   const stats = useMemo(
-    () => statsFromResults(mergeResults(localStats.results, history), number),
-    [localStats, history, number],
+    () => statsFromResults(mergeResults(localStats.results, history), today),
+    [localStats, history, today],
   )
 
   // Accounts: follow sign-in, bring this device's results into the account, then load its history.
@@ -79,6 +80,20 @@ export default function App({ backend, now = new Date(), clientId = 'anonymous' 
       stop()
     }
   }, [account, clientId])
+
+  // Check if yesterday's submitted fib was selected as today's featured fib.
+  useEffect(() => {
+    if (number <= 1) return
+    let live = true
+    Promise.all([backend.getSubmittedFib(number - 1), backend.getFeaturedFib(number)])
+      .then(([submitted, featured]) => {
+        if (live && submitted && featured && submitted.trim() === featured.text.trim()) setFibRan(submitted)
+      })
+      .catch(() => {})
+    return () => {
+      live = false
+    }
+  }, [backend, number])
 
   function openPage(next: 'game' | 'account') {
     setPage(next)
@@ -175,8 +190,15 @@ export default function App({ backend, now = new Date(), clientId = 'anonymous' 
       <Masthead
         number={number}
         date={dateForPuzzle(number)}
+        streak={stats.streak}
+        archive={today > 1 ? { canBack: number > 1, canForward: number < today, onBack: () => setNumber(n => n - 1), onForward: () => setNumber(n => n + 1) } : undefined}
         account={account.available ? { signedIn: player !== null, onOpen: () => openPage('account') } : undefined}
       />
+      {fibRan && (
+        <div className="fib-ran" role="status">
+          Your fib ran today: <em>"{fibRan}"</em>
+        </div>
+      )}
       <main id="main" className={page === 'account' ? 'paper desk' : 'paper'}>
         {page === 'account' ? (
           <AccountPage account={account} player={player} stats={stats} returnTo={SHARE_URL} onBack={() => openPage('game')} />
@@ -185,19 +207,17 @@ export default function App({ backend, now = new Date(), clientId = 'anonymous' 
             Setting today’s type…
           </p>
         ) : finished ? (
-          <>
-            <Summary
-              puzzle={puzzle}
-              day={day}
-              stats={stats}
-              backend={backend}
-              headingRef={heading}
-              saved={saved.current}
-              signedIn={player !== null}
-              onSignIn={() => openPage('account')}
-            />
-            <FibForm number={number + 1} backend={backend} clientId={clientId} />
-          </>
+          <Summary
+            puzzle={puzzle}
+            day={day}
+            stats={stats}
+            backend={backend}
+            clientId={clientId}
+            headingRef={heading}
+            saved={saved.current}
+            signedIn={player !== null}
+            onSignIn={() => openPage('account')}
+          />
         ) : (
           round &&
           roundState && (

@@ -1,5 +1,5 @@
 import { shareText } from './share'
-import type { DayOutcome } from './types'
+import type { DayOutcome, Round } from './types'
 
 const day = (rounds: [number, boolean][]): DayOutcome => {
   const fibsCaught = rounds.filter(([, c]) => c).length
@@ -12,22 +12,36 @@ const day = (rounds: [number, boolean][]): DayOutcome => {
   }
 }
 
+const mockRounds = (themes: string[]): Round[] =>
+  themes.map((theme) => ({
+    theme,
+    level: 'easy' as const,
+    truths: [],
+    fib: { id: 'fib', text: 'fib', explanation: 'exp' },
+  }))
+
+const URL = 'https://x.test/fibbed/'
+
 describe('shareText', () => {
-  it('shows one line per round and the total', () => {
-    expect(shareText(12, day([[3, true], [1, false], [3, true]]), 'https://x.test/fibbed/')).toBe(
-      'Fibbed #12\n🟩🟩🟩🕵️\n🟩🟥\n🟩🟩🟩🕵️\n2 of 3 fibs caught\nhttps://x.test/fibbed/',
-    )
+  it('shows header, round icons with themes, and url', () => {
+    const result = shareText(12, day([[3, true], [1, false], [3, true]]), URL, mockRounds(['Dogs', 'Egypt', 'Space']))
+    expect(result).toBe('Fibbed No. 12 — 2/3\n✅ Dogs  ❌ Egypt  ✅ Space\n' + URL)
   })
 
-  it('calls out a perfect paper', () => {
-    expect(shareText(4, day([[3, true], [3, true], [3, true]]), 'u')).toContain('Perfect paper: 3 of 3 fibs caught')
+  it('marks a perfect paper with ✦', () => {
+    const result = shareText(4, day([[3, true], [3, true], [3, true]]), URL, mockRounds(['A', 'B', 'C']))
+    expect(result).toContain('3/3 ✦')
   })
 
-  it('shows a fib caught on the first pick of a round as a single red square', () => {
-    expect(shareText(4, day([[0, false], [3, true], [2, false]]), 'u').split('\n').slice(1, 4)).toEqual(['🟥', '🟩🟩🟩🕵️', '🟩🟩🟥'])
+  it('works without round themes passed', () => {
+    const result = shareText(4, day([[3, true], [0, false], [3, true]]), URL)
+    expect(result).toContain('✅ Round 1')
+    expect(result).toContain('❌ Round 2')
   })
 
   it('handles a day with no fibs caught', () => {
-    expect(shareText(4, day([[0, false], [1, false], [2, false]]), 'u')).toContain('0 of 3 fibs caught')
+    const result = shareText(4, day([[0, false], [1, false], [2, false]]), URL, mockRounds(['A', 'B', 'C']))
+    expect(result).toContain('0/3')
+    expect(result).not.toContain('✦')
   })
 })

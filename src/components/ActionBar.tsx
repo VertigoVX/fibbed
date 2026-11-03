@@ -1,3 +1,5 @@
+const TOTAL_ROUNDS = 3
+
 type Props = {
   round: number
   cleared: number
@@ -14,9 +16,14 @@ export function ActionBar({ round, cleared, total, reviewing, canMark, onMark, o
       <div className="actionbar__inner">
         <div className="progress">
           <p role="status">{reviewing ? `Round ${round} done` : `${cleared} of ${total} truths cleared`}</p>
-          <div className="ticks" aria-hidden="true">
-            {Array.from({ length: total }, (_, i) => (
-              <span key={i} className="tick" data-on={i < cleared || undefined} />
+          <div className="progress__dots" aria-hidden="true">
+            {Array.from({ length: TOTAL_ROUNDS }, (_, i) => (
+              <span
+                key={i}
+                className="round-dot"
+                data-done={i < round - 1 || undefined}
+                data-current={i === round - 1 || undefined}
+              />
             ))}
           </div>
         </div>

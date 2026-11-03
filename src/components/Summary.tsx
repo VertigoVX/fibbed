@@ -6,6 +6,7 @@ import type { Stats } from '../lib/stats'
 import type { DayState, Puzzle } from '../lib/types'
 import { BoxScore } from './BoxScore'
 import { Correction } from './Correction'
+import { FibForm } from './FibForm'
 import { percentileBelow, ScoreChart } from './ScoreChart'
 import { ShareRow } from './ShareRow'
 
@@ -14,6 +15,7 @@ type Props = {
   day: DayState
   stats: Stats
   backend: Backend
+  clientId: string
   headingRef: RefObject<HTMLHeadingElement | null>
   /** Resolves once today's result has been sent, so the spread includes you. */
   saved: Promise<unknown>
@@ -24,7 +26,7 @@ type Props = {
 export const SHARE_URL =
   typeof location !== 'undefined' ? new URL(import.meta.env.BASE_URL, location.origin).href : 'https://fibbed.game'
 
-export function Summary({ puzzle, day, stats, backend, headingRef, saved, signedIn, onSignIn }: Props) {
+export function Summary({ puzzle, day, stats, backend, clientId, headingRef, saved, signedIn, onSignIn }: Props) {
   const outcome = dayOutcome(day, puzzle)
   const totalTruths = puzzle.rounds.reduce((n, r) => n + r.truths.length, 0)
   const maxScore = totalTruths + puzzle.rounds.length
@@ -87,7 +89,7 @@ export function Summary({ puzzle, day, stats, backend, headingRef, saved, signed
       </section>
 
       <BoxScore stats={stats} />
-      <ShareRow resultText={shareText(puzzle.number, outcome, SHARE_URL)} url={SHARE_URL} />
+      <ShareRow resultText={shareText(puzzle.number, outcome, SHARE_URL, puzzle.rounds)} url={SHARE_URL} />
       {backend.account.available && !signedIn && (
         <p className="nudge">
           <button type="button" className="btn btn--quiet" onClick={onSignIn}>
@@ -96,6 +98,8 @@ export function Summary({ puzzle, day, stats, backend, headingRef, saved, signed
           <span>on every device, with your past papers.</span>
         </p>
       )}
+
+      <FibForm number={puzzle.number + 1} backend={backend} clientId={clientId} />
 
       <div className="rounds">
         {puzzle.rounds.map((round, i) => {
