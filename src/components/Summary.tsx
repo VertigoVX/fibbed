@@ -1,4 +1,42 @@
 import { useEffect, useState, type RefObject } from 'react'
+
+function downloadCalendarReminder(url: string) {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const dtstart = `${tomorrow.getFullYear()}${pad(tomorrow.getMonth() + 1)}${pad(tomorrow.getDate())}T080000`
+  const now = new Date()
+  const dtstamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}T${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}Z`
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Fibbed//EN',
+    'BEGIN:VEVENT',
+    'UID:fibbed-daily-reminder@fibbed.game',
+    `DTSTAMP:${dtstamp}`,
+    `DTSTART:${dtstart}`,
+    'RRULE:FREQ=DAILY',
+    "SUMMARY:Fibbed — today's paper is ready",
+    `DESCRIPTION:Play today's Fibbed puzzle at ${url}`,
+    `URL:${url}`,
+    'DURATION:PT5M',
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    'TRIGGER:PT0S',
+    "DESCRIPTION:Fibbed — today's paper is ready",
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n')
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'fibbed-daily.ics'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(a.href)
+}
 import type { Backend, PuzzleStats, ScoreCounts } from '../lib/backend'
 import { dayOutcome } from '../lib/game'
 import { shareText } from '../lib/share'
@@ -33,6 +71,7 @@ export function Summary({ puzzle, day, stats, backend, clientId, headingRef, sav
   const score = outcome.cleared + outcome.fibsCaught
   const [crowd, setCrowd] = useState<PuzzleStats | null>(null)
   const [counts, setCounts] = useState<ScoreCounts | null>(null)
+  const [reminderSent, setReminderSent] = useState(false)
 
   useEffect(() => {
     let live = true
@@ -98,6 +137,23 @@ export function Summary({ puzzle, day, stats, backend, clientId, headingRef, sav
           <span>on every device, with your past papers.</span>
         </p>
       )}
+
+      <div className="reminder">
+        {reminderSent ? (
+          <p className="reminder__confirm" role="status">Calendar file downloaded — open it to add the daily reminder.</p>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="btn btn--quiet reminder__btn"
+              onClick={() => { downloadCalendarReminder(SHARE_URL); setReminderSent(true) }}
+            >
+              Add daily reminder
+            </button>
+            <span className="reminder__label">Get a nudge each morning to play.</span>
+          </>
+        )}
+      </div>
 
       <FibForm number={puzzle.number + 1} backend={backend} clientId={clientId} />
 

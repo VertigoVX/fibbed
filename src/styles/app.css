@@ -934,6 +934,25 @@ a:hover {
   padding-inline: 0;
 }
 
+.reminder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-xs);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.reminder__btn {
+  padding-inline: 0;
+}
+
+.reminder__confirm {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
 /* Account */
 
 .account {
