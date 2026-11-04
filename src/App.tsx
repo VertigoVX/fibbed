@@ -15,6 +15,7 @@ import { SHARE_URL } from './components/Summary'
 
 type Props = { backend: Backend; now?: Date; clientId?: string }
 
+const PUZZLE_TIMEOUT_MS = 8000
 const FEATURED_TIMEOUT_MS = 1500
 const history_ = typeof window !== 'undefined' ? window.history : (undefined as unknown as History)
 const LEVEL_NAME = { easy: 'easy', medium: 'medium', hard: 'hard' } as const
@@ -24,10 +25,11 @@ function useTodaysPuzzle(number: number, backend: Backend): Puzzle | null {
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null)
   useEffect(() => {
     let live = true
-    const timeout = new Promise<null>((r) => setTimeout(() => r(null), FEATURED_TIMEOUT_MS))
+    const puzzleTimeout = new Promise<null>((r) => setTimeout(() => r(null), PUZZLE_TIMEOUT_MS))
+    const fibTimeout = new Promise<null>((r) => setTimeout(() => r(null), FEATURED_TIMEOUT_MS))
     Promise.all([
-      Promise.race([backend.getPuzzle(number).catch(() => null), timeout]),
-      Promise.race([backend.getFeaturedFib(number).catch(() => null), timeout]),
+      Promise.race([backend.getPuzzle(number).catch(() => null), puzzleTimeout]),
+      Promise.race([backend.getFeaturedFib(number).catch(() => null), fibTimeout]),
     ]).then(([approved, featured]) => {
       if (live) setPuzzle(withFeaturedFib(approved ?? getPuzzle(number), featured))
     })
